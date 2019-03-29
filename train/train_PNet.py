@@ -18,7 +18,7 @@ total_loss = radio_cls_loss * label_cost + radio_bbox_loss * bbox_loss + radio_l
 avg_total_loss = fluid.layers.mean(total_loss)
 
 # 计算一共多少组数据
-label_file = '../data/12/train_pnet_landmark.txt'
+label_file = '../data2/12/all_data_list.txt'
 f = open(label_file, 'r')
 num = len(f.readlines())
 
