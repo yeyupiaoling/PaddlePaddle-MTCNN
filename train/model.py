@@ -89,8 +89,8 @@ def P_Net():
 
 def R_Net():
     # 定义输入层
-    image = fluid.layers.data(name='image', shape=[3, 12, 12], dtype='float32')
-    label = fluid.layers.data(name='label', shape=[1], dtype='float32')
+    image = fluid.layers.data(name='image', shape=[3, 24, 24], dtype='float32')
+    label = fluid.layers.data(name='label', shape=[1], dtype='int64')
     bbox_target = fluid.layers.data(name='bbox_target', shape=[4], dtype='float32')
     landmark_target = fluid.layers.data(name='landmark_target', shape=[10], dtype='float32')
 
@@ -139,21 +139,18 @@ def R_Net():
     # 第一个全连接层
     fc1 = fluid.layers.fc(input=fc_flatten, size=128, name='fc1')
 
-    # 是否人脸的分类输出吃层
+    # 是否人脸的分类输出层
     cls_prob = fluid.layers.fc(input=fc1, size=2, act='softmax', name='cls_fc')
-
-    # 人脸box的输出层
-    bbox_pred = fluid.layers.fc(input=fc1, size=4, act=None, name='bbox_fc')
-
-    # 人脸5个关键点的输出层
-    landmark_pred = fluid.layers.fc(input=fc1, size=10, act=None, name='landmark_fc')
-
     # 是否人脸分类输出交叉熵损失函数
     cls_loss = cls_ohem(cls_prob=cls_prob, label=label)
 
+    # 人脸box的输出层
+    bbox_pred = fluid.layers.fc(input=fc1, size=4, act=None, name='bbox_fc')
     # 人脸box的平方差损失函数
     bbox_loss = bbox_ohem(bbox_pred=bbox_pred, bbox_target=bbox_target, label=label)
 
+    # 人脸5个关键点的输出层
+    landmark_pred = fluid.layers.fc(input=fc1, size=10, act=None, name='landmark_fc')
     # 人脸关键点的平方差损失函数
     landmark_loss = landmark_ohem(landmark_pred=landmark_pred, landmark_target=landmark_target, label=label)
 
@@ -164,8 +161,8 @@ def R_Net():
 
 def O_Net():
     # 定义输入层
-    image = fluid.layers.data(name='image', shape=[3, 12, 12], dtype='float32')
-    label = fluid.layers.data(name='label', shape=[1], dtype='float32')
+    image = fluid.layers.data(name='image', shape=[3, 48, 48], dtype='float32')
+    label = fluid.layers.data(name='label', shape=[1], dtype='int64')
     bbox_target = fluid.layers.data(name='bbox_target', shape=[4], dtype='float32')
     landmark_target = fluid.layers.data(name='landmark_target', shape=[10], dtype='float32')
 
@@ -231,19 +228,16 @@ def O_Net():
 
     # 是否人脸的分类输出层
     cls_prob = fluid.layers.fc(input=fc1, size=2, act='softmax', name='cls_fc')
-
-    # 人脸box的输出层
-    bbox_pred = fluid.layers.fc(input=fc1, size=4, act=None, name='bbox_fc')
-
-    # 人脸5个关键点的输出层
-    landmark_pred = fluid.layers.fc(input=fc1, size=10, act=None, name='landmark_fc')
-
     # 是否人脸分类输出交叉熵损失函数
     cls_loss = cls_ohem(cls_prob=cls_prob, label=label)
 
+    # 人脸box的输出层
+    bbox_pred = fluid.layers.fc(input=fc1, size=4, act=None, name='bbox_fc')
     # 人脸box的平方差损失函数
     bbox_loss = bbox_ohem(bbox_pred=bbox_pred, bbox_target=bbox_target, label=label)
 
+    # 人脸5个关键点的输出层
+    landmark_pred = fluid.layers.fc(input=fc1, size=10, act=None, name='landmark_fc')
     # 人脸关键点的平方差损失函数
     landmark_loss = landmark_ohem(landmark_pred=landmark_pred, landmark_target=landmark_target, label=label)
 
@@ -269,6 +263,9 @@ def cls_ohem(cls_prob, label):
     label_filter_invalid = fluid.layers.py_func(func=my_where1, x=[zeros, label], out=label_filter_invalid)
 
     loss = fluid.layers.cross_entropy(input=cls_prob, label=label_filter_invalid)
+    # loss = fluid.layers.squeeze(input=loss, axes=[])
+    # print(loss)
+    # loss = fluid.layers.topk(input=loss, k=22)
     return fluid.layers.reduce_sum(loss)
 
 

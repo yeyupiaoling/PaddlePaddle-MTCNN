@@ -18,7 +18,7 @@ total_loss = radio_cls_loss * cls_loss + radio_bbox_loss * bbox_loss + radio_lan
 avg_total_loss = fluid.layers.mean(total_loss)
 
 # 计算一共多少组数据
-label_file = '../data/24/all_24_data.txt'
+label_file = '../data/24/all_data_list.txt'
 f = open(label_file, 'r')
 num = len(f.readlines())
 
@@ -26,11 +26,11 @@ num = len(f.readlines())
 _, learning_rate = optimize(avg_total_loss, num, batch_size)
 
 # 获取自定义数据
-train_reader = paddle.batch(reader=reader.train_reader('../data/24/all_24_data.txt'), batch_size=batch_size)
+train_reader = paddle.batch(reader=reader.train_reader('../data/24/all_data_list.txt'), batch_size=batch_size)
 
 # 定义一个使用GPU的执行器
-place = fluid.CUDAPlace(0)
-# place = fluid.CPUPlace()
+# place = fluid.CUDAPlace(0)
+place = fluid.CPUPlace()
 exe = fluid.Executor(place)
 # 进行参数初始化
 exe.run(fluid.default_startup_program())
