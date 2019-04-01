@@ -264,8 +264,9 @@ def cls_ohem(cls_prob, label):
     label_filter_invalid = fluid.layers.py_func(func=my_where1, x=[zeros, label], out=label_filter_invalid)
 
     loss = fluid.layers.cross_entropy(input=cls_prob, label=label_filter_invalid)
-    # loss = fluid.layers.squeeze(input=loss, axes=[])
-    # loss, _ = fluid.layers.topk(input=loss, k=22)
+    # 只取70%的数据
+    loss = fluid.layers.squeeze(input=loss, axes=[])
+    loss, _ = fluid.layers.topk(input=loss, k=268)
     loss = fluid.layers.reduce_sum(loss)
     return loss
 
