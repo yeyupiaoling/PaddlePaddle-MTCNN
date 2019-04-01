@@ -1,3 +1,4 @@
 train/__pycache__/
 train/.idea/
 data/
+infer_model/
