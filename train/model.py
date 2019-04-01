@@ -266,7 +266,8 @@ def cls_ohem(cls_prob, label):
     loss = fluid.layers.cross_entropy(input=cls_prob, label=label_filter_invalid)
     # loss = fluid.layers.squeeze(input=loss, axes=[])
     # loss, _ = fluid.layers.topk(input=loss, k=22)
-    return fluid.layers.reduce_sum(loss)
+    loss = fluid.layers.reduce_sum(loss)
+    return loss
 
 
 # 人脸box的平方差损失函数
@@ -283,7 +284,8 @@ def bbox_ohem(bbox_pred, bbox_target, label):
 
     square_error = fluid.layers.square_error_cost(input=bbox_pred, label=bbox_target)
     square_error = square_error * valid_inds
-    return fluid.layers.reduce_sum(square_error)
+    square_error = fluid.layers.reduce_sum(square_error)
+    return square_error
 
 
 # 关键点的平方差损失函数
@@ -300,22 +302,21 @@ def landmark_ohem(landmark_pred, landmark_target, label):
 
     square_error = fluid.layers.square_error_cost(input=landmark_pred, label=landmark_target)
     square_error = square_error * valid_inds
-    return fluid.layers.reduce_sum(square_error)
+    square_error = fluid.layers.reduce_sum(square_error)
+    return square_error
 
 
 # 计算分类准确率
 def cal_accuracy(cls_prob, label):
     # 保留label>=0的数据，即pos和neg的数据
-    def my_where1(zeros, ones, label, cls_prob):
+    def my_where1(zeros, ones, label):
         label_filter_invalid = np.where(np.greater_equal(label, 0), ones, zeros)
-        print(np.array(cls_prob))
-        print(np.array(label_filter_invalid))
         return label_filter_invalid
 
     zeros = fluid.layers.fill_constant_batch_size_like(input=label, shape=label.shape, dtype='int64', value=0)
     ones = fluid.layers.fill_constant_batch_size_like(input=label, shape=label.shape, dtype='int64', value=1)
     picked = create_tmp_var(name='picked', dtype='int64', shape=label.shape)
-    picked = fluid.layers.py_func(func=my_where1, x=[zeros, ones, label, cls_prob], out=picked)
+    picked = fluid.layers.py_func(func=my_where1, x=[zeros, ones, label], out=picked)
 
     accuracy_op = fluid.layers.accuracy(input=cls_prob, label=picked)
     return accuracy_op

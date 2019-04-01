@@ -8,7 +8,7 @@ import paddle.fluid as fluid
 radio_cls_loss = 1.0
 radio_bbox_loss = 0.5
 radio_landmark_loss = 1.0
-batch_size = 32
+batch_size = 384
 
 # 获取O网络
 image, label, bbox_target, landmark_target, cls_loss, bbox_loss, landmark_loss, accuracy, cls_prob, bbox_pred, landmark_pred = O_Net()
@@ -29,8 +29,8 @@ _, learning_rate = optimize(avg_total_loss, num, batch_size)
 train_reader = paddle.batch(reader=reader.train_reader('../data/48/all_data_list.txt'), batch_size=batch_size)
 
 # 定义一个使用GPU的执行器
-# place = fluid.CUDAPlace(0)
-place = fluid.CPUPlace()
+place = fluid.CUDAPlace(0)
+# place = fluid.CPUPlace()
 exe = fluid.Executor(place)
 # 进行参数初始化
 exe.run(fluid.default_startup_program())

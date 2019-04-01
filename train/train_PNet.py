@@ -8,7 +8,7 @@ import paddle.fluid as fluid
 radio_cls_loss = 1.0
 radio_bbox_loss = 0.5
 radio_landmark_loss = 0.5
-batch_size = 32
+batch_size = 384
 
 # 获取P网络
 image, label, bbox_target, landmark_target, label_cost, bbox_loss, landmark_loss, accuracy, conv4_1, conv4_2, conv4_3 = P_Net()
@@ -18,7 +18,7 @@ total_loss = radio_cls_loss * label_cost + radio_bbox_loss * bbox_loss + radio_l
 avg_total_loss = fluid.layers.mean(total_loss)
 
 # 计算一共多少组数据
-label_file = '../data2/12/all_data_list.txt'
+label_file = '../data/12/all_data_list.txt'
 f = open(label_file, 'r')
 num = len(f.readlines())
 
@@ -26,11 +26,11 @@ num = len(f.readlines())
 _, learning_rate = optimize(avg_total_loss, num, batch_size)
 
 # 获取自定义数据
-train_reader = paddle.batch(reader=reader.train_reader('../data2/12/all_data_list.txt'), batch_size=batch_size)
+train_reader = paddle.batch(reader=reader.train_reader('../data/12/all_data_list.txt'), batch_size=batch_size)
 
 # 定义一个使用GPU的执行器
-# place = fluid.CUDAPlace(0)
-place = fluid.CPUPlace()
+place = fluid.CUDAPlace(0)
+# place = fluid.CPUPlace()
 exe = fluid.Executor(place)
 # 进行参数初始化
 exe.run(fluid.default_startup_program())
