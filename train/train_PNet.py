@@ -11,7 +11,7 @@ radio_landmark_loss = 0.5
 batch_size = 32
 
 # 获取P网络
-image, label, bbox_target, landmark_target, label_cost, bbox_loss, landmark_loss, accuracy, conv4_1, conv4_2, conv4_3, cls_prob = P_Net()
+image, label, bbox_target, landmark_target, label_cost, bbox_loss, landmark_loss, accuracy, conv4_1, conv4_2, conv4_3 = P_Net()
 
 # 构建训练损失函数
 total_loss = radio_cls_loss * label_cost + radio_bbox_loss * bbox_loss + radio_landmark_loss * landmark_loss
@@ -42,13 +42,15 @@ feeder = fluid.DataFeeder(place=place, feed_list=[image, label, bbox_target, lan
 for pass_id in range(100):
     # 进行训练
     for batch_id, data in enumerate(train_reader()):
-        train_cost, acc, lr, cls = exe.run(program=fluid.default_main_program(),
-                                      feed=feeder.feed(data),
-                                      fetch_list=[avg_total_loss, accuracy, learning_rate, cls_prob])
+        train_cost, acc, lr, label_cost1, bbox_loss1, landmark_loss1 = exe.run(program=fluid.default_main_program(),
+                                                                               feed=feeder.feed(data),
+                                                                               fetch_list=[avg_total_loss, accuracy,
+                                                                                           learning_rate, label_cost,
+                                                                                           bbox_loss, landmark_loss])
 
         # 每100个batch打印一次信息
         if batch_id % 100 == 0:
-            print(cls)
+            print(label_cost1, bbox_loss1, landmark_loss1)
             print('Pass:%d, Batch:%d, Cost:%0.5f, Accuracy：%0.5f, Learning rate:%0.7f' % (
                 pass_id, batch_id, train_cost[0], acc[0], lr[0]))
 

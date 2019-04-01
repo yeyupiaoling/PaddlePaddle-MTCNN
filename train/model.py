@@ -49,10 +49,11 @@ def P_Net():
     conv4_1 = fluid.layers.conv2d(input=conv3_prelu,
                                   num_filters=2,
                                   filter_size=1,
-                                  act='softmax',
                                   param_attr=ParamAttr(initializer=Xavier(),
                                                        regularizer=L2DecayRegularizer(0.0005)),
                                   name='conv4_1')
+    conv4_1 = fluid.layers.squeeze(input=conv4_1, axes=[])
+    conv4_1_softmax = fluid.layers.softmax(input=conv4_1)
 
     # 人脸box的回归卷积输出层
     conv4_2 = fluid.layers.conv2d(input=conv3_prelu,
@@ -71,7 +72,7 @@ def P_Net():
                                   name='conv4_3')
 
     # 获取是否人脸分类交叉熵损失函数
-    cls_prob = fluid.layers.squeeze(input=conv4_1, axes=[], name='cls_prob')
+    cls_prob = fluid.layers.squeeze(input=conv4_1_softmax, axes=[], name='cls_prob')
     label_cost = cls_ohem(cls_prob=cls_prob, label=label)
 
     # 获取人脸box回归平方差损失函数
@@ -84,7 +85,7 @@ def P_Net():
 
     # 准确率函数
     accuracy = cal_accuracy(cls_prob=cls_prob, label=label)
-    return image, label, bbox_target, landmark_target, label_cost, bbox_loss, landmark_loss, accuracy, conv4_1, conv4_2, conv4_3, cls_prob
+    return image, label, bbox_target, landmark_target, label_cost, bbox_loss, landmark_loss, accuracy, conv4_1, conv4_2, conv4_3
 
 
 def R_Net():
@@ -264,8 +265,7 @@ def cls_ohem(cls_prob, label):
 
     loss = fluid.layers.cross_entropy(input=cls_prob, label=label_filter_invalid)
     # loss = fluid.layers.squeeze(input=loss, axes=[])
-    # print(loss)
-    # loss = fluid.layers.topk(input=loss, k=22)
+    # loss, _ = fluid.layers.topk(input=loss, k=22)
     return fluid.layers.reduce_sum(loss)
 
 
@@ -308,6 +308,8 @@ def cal_accuracy(cls_prob, label):
     # 保留label>=0的数据，即pos和neg的数据
     def my_where1(zeros, ones, label, cls_prob):
         label_filter_invalid = np.where(np.greater_equal(label, 0), ones, zeros)
+        print(np.array(cls_prob))
+        print(np.array(label_filter_invalid))
         return label_filter_invalid
 
     zeros = fluid.layers.fill_constant_batch_size_like(input=label, shape=label.shape, dtype='int64', value=0)
