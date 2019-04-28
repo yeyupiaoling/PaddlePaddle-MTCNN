@@ -53,7 +53,7 @@ def P_Net():
                                                        regularizer=L2DecayRegularizer(0.0005)),
                                   name='conv4_1')
     conv4_1 = fluid.layers.squeeze(input=conv4_1, axes=[])
-    conv4_1_softmax = fluid.layers.softmax(input=conv4_1)
+    conv4_1_softmax = fluid.layers.softmax(input=conv4_1, use_cudnn=False)
 
     # 人脸box的回归卷积输出层
     conv4_2 = fluid.layers.conv2d(input=conv3_prelu,
@@ -267,7 +267,7 @@ def cls_ohem(cls_prob, label):
     # 只取70%的数据
     loss = fluid.layers.squeeze(input=loss, axes=[])
     loss, _ = fluid.layers.topk(input=loss, k=268)
-    loss = fluid.layers.reduce_sum(loss)
+    # loss = fluid.layers.reduce_mean(loss)
     return loss
 
 
@@ -285,7 +285,7 @@ def bbox_ohem(bbox_pred, bbox_target, label):
 
     square_error = fluid.layers.square_error_cost(input=bbox_pred, label=bbox_target)
     square_error = square_error * valid_inds
-    square_error = fluid.layers.reduce_sum(square_error)
+    square_error = fluid.layers.reduce_mean(square_error)
     return square_error
 
 
@@ -303,7 +303,7 @@ def landmark_ohem(landmark_pred, landmark_target, label):
 
     square_error = fluid.layers.square_error_cost(input=landmark_pred, label=landmark_target)
     square_error = square_error * valid_inds
-    square_error = fluid.layers.reduce_sum(square_error)
+    square_error = fluid.layers.reduce_mean(square_error)
     return square_error
 
 
