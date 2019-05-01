@@ -255,20 +255,53 @@ def create_tmp_var(name, dtype, shape):
 # 是否有人脸交叉熵损失函数
 def cls_ohem(cls_prob, label):
     # 只把pos的label设定为1,其余都为0
-    def my_where1(zeros, label):
+    def my_where1(zeros, label, cls_prob):
         label_filter_invalid = np.where(np.less(label, 0), zeros, label)
         return label_filter_invalid
 
     zeros = fluid.layers.fill_constant_batch_size_like(input=label, shape=label.shape, dtype='int64', value=0)
     label_filter_invalid = create_tmp_var(name='label_filter_invalid', dtype='int64', shape=label.shape)
-    label_filter_invalid = fluid.layers.py_func(func=my_where1, x=[zeros, label], out=label_filter_invalid)
+    label_filter_invalid = fluid.layers.py_func(func=my_where1, x=[zeros, label, cls_prob], out=label_filter_invalid)
 
     loss = fluid.layers.cross_entropy(input=cls_prob, label=label_filter_invalid)
     # 只取70%的数据
-    loss = fluid.layers.squeeze(input=loss, axes=[])
-    loss, _ = fluid.layers.topk(input=loss, k=268)
-    # loss = fluid.layers.reduce_mean(loss)
+    # loss = fluid.layers.squeeze(input=loss, axes=[])
+    # loss, _ = fluid.layers.topk(input=loss, k=268)
+    loss = fluid.layers.reduce_mean(loss)
     return loss
+
+
+def cls_ohem1(cls_prob, label):
+    def my_cls_ohem(cls_prob, label):
+        zeros = np.zeros_like(label)
+        # 只把pos的label设定为1,其余都为0
+        label_filter_invalid = np.where(np.less(label, 0), zeros, label)
+        # 类别size[2*batch]
+        num_cls_prob = np.size(cls_prob)
+        cls_prob_reshpae = np.reshape(cls_prob, [num_cls_prob, -1])
+        label_int = np.cast(label_filter_invalid, np.int32)
+        # 获取batch数 **
+        num_row = int(cls_prob.get_shape()[0])
+        # 对应某一batch而言，batch*2为非人类别概率，batch*2+1为人概率类别,indices为对应 cls_prob_reshpae
+        # 应该的真实值，后续用交叉熵计算损失
+        row = np.arange(num_row) * 2
+        indices_ = row + label_int
+        # 真实标签对应的概率
+        label_prob = np.squeeze(np.gather(cls_prob_reshpae, indices_))
+        loss = -np.log(label_prob + 1e-10)
+        zeros = np.zeros_like(label_prob, dtype=np.float32)
+        ones = np.ones_like(label_prob, dtype=np.float32)
+        # 统计neg和pos的数量
+        valid_inds = np.where(label < zeros, zeros, ones)
+        num_valid = np.reduce_sum(valid_inds)
+        # 选取70%的数据
+        num_keep_radio = 0.7
+        keep_num = np.cast(num_valid * num_keep_radio, dtype=np.int32)
+        # 只选取neg，pos的70%损失
+        loss = loss * valid_inds
+
+    loss, _ = tf.nn.top_k(loss, k=keep_num)
+    return tf.reduce_mean(loss)
 
 
 # 人脸box的平方差损失函数
