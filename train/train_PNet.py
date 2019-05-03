@@ -29,8 +29,8 @@ _, learning_rate = optimize(avg_total_loss, num, batch_size)
 train_reader = paddle.batch(reader=reader.train_reader('../data/12/all_data_list.txt'), batch_size=batch_size)
 
 # 定义一个使用GPU的执行器
-place = fluid.CUDAPlace(0)
-# place = fluid.CPUPlace()
+# place = fluid.CUDAPlace(0)
+place = fluid.CPUPlace()
 exe = fluid.Executor(place)
 # 进行参数初始化
 exe.run(fluid.default_startup_program())

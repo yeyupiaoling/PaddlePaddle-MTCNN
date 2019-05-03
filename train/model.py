@@ -255,13 +255,13 @@ def create_tmp_var(name, dtype, shape):
 # 是否有人脸交叉熵损失函数
 def cls_ohem(cls_prob, label):
     # 只把pos的label设定为1,其余都为0
-    def my_where1(zeros, label, cls_prob):
+    def my_where1(zeros, label):
         label_filter_invalid = np.where(np.less(label, 0), zeros, label)
         return label_filter_invalid
 
     zeros = fluid.layers.fill_constant_batch_size_like(input=label, shape=label.shape, dtype='int64', value=0)
     label_filter_invalid = create_tmp_var(name='label_filter_invalid', dtype='int64', shape=label.shape)
-    label_filter_invalid = fluid.layers.py_func(func=my_where1, x=[zeros, label, cls_prob], out=label_filter_invalid)
+    label_filter_invalid = fluid.layers.py_func(func=my_where1, x=[zeros, label], out=label_filter_invalid)
 
     loss = fluid.layers.cross_entropy(input=cls_prob, label=label_filter_invalid)
     # 只取70%的数据
@@ -271,37 +271,43 @@ def cls_ohem(cls_prob, label):
     return loss
 
 
-def cls_ohem1(cls_prob, label):
-    def my_cls_ohem(cls_prob, label):
-        zeros = np.zeros_like(label)
-        # 只把pos的label设定为1,其余都为0
-        label_filter_invalid = np.where(np.less(label, 0), zeros, label)
-        # 类别size[2*batch]
-        num_cls_prob = np.size(cls_prob)
-        cls_prob_reshpae = np.reshape(cls_prob, [num_cls_prob, -1])
-        label_int = np.cast(label_filter_invalid, np.int32)
-        # 获取batch数 **
-        num_row = int(cls_prob.get_shape()[0])
-        # 对应某一batch而言，batch*2为非人类别概率，batch*2+1为人概率类别,indices为对应 cls_prob_reshpae
-        # 应该的真实值，后续用交叉熵计算损失
-        row = np.arange(num_row) * 2
-        indices_ = row + label_int
-        # 真实标签对应的概率
-        label_prob = np.squeeze(np.gather(cls_prob_reshpae, indices_))
-        loss = -np.log(label_prob + 1e-10)
-        zeros = np.zeros_like(label_prob, dtype=np.float32)
-        ones = np.ones_like(label_prob, dtype=np.float32)
-        # 统计neg和pos的数量
-        valid_inds = np.where(label < zeros, zeros, ones)
-        num_valid = np.reduce_sum(valid_inds)
-        # 选取70%的数据
-        num_keep_radio = 0.7
-        keep_num = np.cast(num_valid * num_keep_radio, dtype=np.int32)
-        # 只选取neg，pos的70%损失
-        loss = loss * valid_inds
-
+"""TensorFlow的损失函数
+def cls_ohem(cls_prob, label):
+    '''计算类别损失
+    参数：
+      cls_prob：预测类别，是否有人
+      label：真实值
+    返回值：
+      损失
+    '''
+    zeros = tf.zeros_like(label)
+    # 只把pos的label设定为1,其余都为0
+    label_filter_invalid = tf.where(tf.less(label, 0), zeros, label)
+    # 类别size[2*batch]
+    num_cls_prob = tf.size(cls_prob)
+    cls_prob_reshpae = tf.reshape(cls_prob, [num_cls_prob, -1])
+    label_int = tf.cast(label_filter_invalid, tf.int32)
+    # 获取batch数
+    num_row = tf.to_int32(cls_prob.get_shape()[0])
+    # 对应某一batch而言，batch*2为非人类别概率，batch*2+1为人概率类别,indices为对应 cls_prob_reshpae
+    # 应该的真实值，后续用交叉熵计算损失
+    row = tf.range(num_row) * 2
+    indices_ = row + label_int
+    # 真实标签对应的概率
+    label_prob = tf.squeeze(tf.gather(cls_prob_reshpae, indices_))
+    loss = -tf.log(label_prob + 1e-10)
+    zeros = tf.zeros_like(label_prob, dtype=tf.float32)
+    ones = tf.ones_like(label_prob, dtype=tf.float32)
+    # 统计neg和pos的数量
+    valid_inds = tf.where(label < zeros, zeros, ones)
+    num_valid = tf.reduce_sum(valid_inds)
+    # 选取70%的数据
+    keep_num = tf.cast(num_valid * num_keep_radio, dtype=tf.int32)
+    # 只选取neg，pos的70%损失
+    loss = loss * valid_inds
     loss, _ = tf.nn.top_k(loss, k=keep_num)
     return tf.reduce_mean(loss)
+"""
 
 
 # 人脸box的平方差损失函数
@@ -322,6 +328,26 @@ def bbox_ohem(bbox_pred, bbox_target, label):
     return square_error
 
 
+"""TensorFlow的损失函数
+def bbox_ohem(bbox_pred, bbox_target, label):
+    '''计算box的损失'''
+    zeros_index = tf.zeros_like(label, dtype=tf.float32)
+    ones_index = tf.ones_like(label, dtype=tf.float32)
+    # 保留pos和part的数据
+    valid_inds = tf.where(tf.equal(tf.abs(label), 1), ones_index, zeros_index)
+    # 计算平方差损失
+    square_error = tf.square(bbox_pred - bbox_target)
+    square_error = tf.reduce_sum(square_error, axis=1)
+    # 保留的数据的个数
+    num_valid = tf.reduce_sum(valid_inds)
+    keep_num = tf.cast(num_valid, dtype=tf.int32)
+    # 保留pos和part部分的损失
+    square_error = square_error * valid_inds
+    square_error, _ = tf.nn.top_k(square_error, k=keep_num)
+    return tf.reduce_mean(square_error)
+"""
+
+
 # 关键点的平方差损失函数
 def landmark_ohem(landmark_pred, landmark_target, label):
     # 只保留landmark数据
@@ -340,6 +366,26 @@ def landmark_ohem(landmark_pred, landmark_target, label):
     return square_error
 
 
+"""TensorFlow的损失函数
+def landmark_ohem(landmark_pred, landmark_target, label):
+    '''计算关键点损失'''
+    ones = tf.ones_like(label, dtype=tf.float32)
+    zeros = tf.zeros_like(label, dtype=tf.float32)
+    # 只保留landmark数据
+    valid_inds = tf.where(tf.equal(label, -2), ones, zeros)
+    # 计算平方差损失
+    square_error = tf.square(landmark_pred - landmark_target)
+    square_error = tf.reduce_sum(square_error, axis=1)
+    # 保留数据个数
+    num_valid = tf.reduce_sum(valid_inds)
+    keep_num = tf.cast(num_valid, dtype=tf.int32)
+    # 保留landmark部分数据损失
+    square_error = square_error * valid_inds
+    square_error, _ = tf.nn.top_k(square_error, k=keep_num)
+    return tf.reduce_mean(square_error)
+"""
+
+
 # 计算分类准确率
 def cal_accuracy(cls_prob, label):
     # 保留label>=0的数据，即pos和neg的数据
@@ -354,6 +400,24 @@ def cal_accuracy(cls_prob, label):
 
     accuracy_op = fluid.layers.accuracy(input=cls_prob, label=picked)
     return accuracy_op
+
+
+"""TensorFlow的准确率函数
+def cal_accuracy(cls_prob, label):
+    '''计算分类准确率'''
+    # 预测最大概率的类别，0代表无人，1代表有人
+    pred = tf.argmax(cls_prob, axis=1)
+    label_int = tf.cast(label, tf.int64)
+    # 保留label>=0的数据，即pos和neg的数据
+    cond = tf.where(tf.greater_equal(label_int, 0))
+    picked = tf.squeeze(cond)
+    # 获取pos和neg的label值
+    label_picked = tf.gather(label_int, picked)
+    pred_picked = tf.gather(pred, picked)
+    # 计算准确率
+    accuracy_op = tf.reduce_mean(tf.cast(tf.equal(label_picked, pred_picked), tf.float32))
+    return accuracy_op
+"""
 
 
 # 训练的优化方法
