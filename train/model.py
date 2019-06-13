@@ -274,6 +274,7 @@ def cls_ohem(cls_prob, label):
 
     # 保留neg 0 和pos 1 的数据，将其他的设置为-100，在计算交叉熵时忽略掉，
     new_label, if_cond = where_op(label, 0, -100)
+    # new_label, if_cond = where_op(label, 0, 0)
     # bool to float
     cast_if_cond = fluid.layers.cast(if_cond, np.float32)
     # 求保留之后的数量 * 0.7
@@ -283,11 +284,33 @@ def cls_ohem(cls_prob, label):
     keep_num.stop_gradient = True
     # 计算损失
     loss = fluid.layers.softmax_with_cross_entropy(cls_prob, new_label, ignore_index=-100)
+
+    # 自定义损失函数
+    # cls_prob_reshpae = fluid.layers.reshape(cls_prob, [cfg.batch_size * 2, -1])
+    # label_filter_invalid = fluid.layers.squeeze(new_label, axes=[])
+    # label_int = fluid.layers.cast(label_filter_invalid, np.int32)
+    # row = fluid.layers.range(0, cfg.batch_size, 1, dtype=np.int32) * 2
+    # indices_ = row + label_int
+    # # 计算损失值
+    # label_prob = fluid.layers.squeeze(fluid.layers.gather(cls_prob_reshpae, indices_), axes=[])
+    # loss1 = fluid.layers.log(label_prob + 1e-10)
+    # minus_ones = fluid.layers.fill_constant(shape=[cfg.batch_size, 1], dtype=np.float32, value=-1)
+    # loss1 = fluid.layers.elementwise_mul(minus_ones, loss1)
+    # # 保留neg 0 和pos 1 的数据的损失值
+    # thresh = fluid.layers.fill_constant([1], dtype='int64', value=1)
+    # thresh1 = fluid.layers.fill_constant([1], dtype='int64', value=0)
+    # thresh.stop_gradient = True
+    # thresh1.stop_gradient = True
+    # valid_inds = fluid.layers.logical_or(fluid.layers.equal(label, thresh), fluid.layers.equal(label, thresh1))
+    # valid_inds = fluid.layers.cast(valid_inds, np.float32)
+    # loss1 = loss1 * valid_inds
+
     # reshape ，求top
     loss = fluid.layers.reshape(loss, [1, -1])
     top_loss, _ = fluid.layers.topk(loss, k=keep_num)
     top_loss = fluid.layers.reduce_mean(top_loss)
-    return top_loss, keep_num
+
+    return top_loss, cls_prob
 
 
 # 人脸box的平方差损失函数

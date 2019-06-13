@@ -54,7 +54,7 @@ for pass_id in range(100):
         print(temp1)
 
         # 每100个batch打印一次信息
-        if batch_id % 100 == 0:
+        if batch_id % 1 == 0:
             print(label_cost1, bbox_loss1, landmark_loss1)
             print('Pass:%d, Batch:%d, Cost:%0.5f, Accuracy：%0.5f, Learning rate:%0.7f' % (
                 pass_id, batch_id, train_cost[0], acc[0], lr[0]))
