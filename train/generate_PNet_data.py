@@ -189,12 +189,17 @@ def delete_old_img(old_image_folder):
 if __name__ == '__main__':
     data_path = '../data/'
     # 获取人脸的box图片数据
+    print('开始生成bbox图像数据')
     crop_12_box_image(data_path)
     # 获取人脸关键点的数据
+    print('开始生成landmark图像数据')
     crop_landmark_image(data_path, 12, argument=True)
     # 合并数据列表
+    print('开始合成数据列表')
     combine_data_list(os.path.join(data_path, '12'))
     # 合并图像数据
+    print('开始合成图像文件')
     convert_data(os.path.join(data_path, '12'), os.path.join(data_path, '12', 'all_data'))
     # 删除旧数据
+    print('开始删除就得图像文件')
     delete_old_img(data_path)
