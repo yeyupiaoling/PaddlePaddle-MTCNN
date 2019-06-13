@@ -4,6 +4,7 @@ from model import P_Net, optimize
 import paddle as paddle
 import reader
 import paddle.fluid as fluid
+import myreader
 
 radio_cls_loss = 1.0
 radio_bbox_loss = 0.5
@@ -26,7 +27,8 @@ num = len(f.readlines())
 _, learning_rate = optimize(avg_total_loss, num, batch_size)
 
 # 获取自定义数据
-train_reader = paddle.batch(reader=reader.train_reader('../data/12/all_data_list.txt'), batch_size=batch_size)
+train_reader = paddle.batch(reader=myreader.train_reader('../data/12/all_data'), batch_size=batch_size)
+# train_reader = paddle.batch(reader=reader.train_reader('../data/12/all_data_list.txt'), batch_size=batch_size)
 
 # 定义一个使用GPU的执行器
 # place = fluid.CUDAPlace(0)

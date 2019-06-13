@@ -1,10 +1,5 @@
-import numpy
+import os
 
+data_path = 'D:/User/wgy/workplace/data'
 
-n = [[1, 2], [3, 4]]
-
-n1 = numpy.array(n)
-
-print(n1)
-print(n1.shape)
-print(n1.shape[0])
+print(os.path.join(data_path, '12', 'all_data'))

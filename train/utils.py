@@ -210,6 +210,12 @@ def combine_data_list(data_dir):
         for item in landmark:
             f.write(item)
 
+    # 删除原来的数据列表文件
+    os.remove(os.path.join(data_dir, 'positive.txt'))
+    os.remove(os.path.join(data_dir, 'negative.txt'))
+    os.remove(os.path.join(data_dir, 'part.txt'))
+    os.remove(os.path.join(data_dir, 'landmark.txt'))
+
 
 def crop_landmark_image(data_dir, size, argument=True):
     '''裁剪并保存带有人脸关键点的图片
