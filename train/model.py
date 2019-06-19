@@ -78,12 +78,12 @@ def P_Net():
 
     # 获取人脸box回归平方差损失函数
     bbox_pred = fluid.layers.squeeze(input=conv4_2, axes=[], name='bbox_pred')
+    print('bbox_pred', bbox_pred.shape)
     bbox_loss = bbox_ohem(bbox_pred=bbox_pred, bbox_target=bbox_target, label=label)
 
     # 获取人脸5个关键点回归平方差损失函数
     landmark_pred = fluid.layers.squeeze(input=conv4_3, axes=[], name='landmark_pred')
     landmark_loss = landmark_ohem(landmark_pred=landmark_pred, landmark_target=landmark_target, label=label)
-
     # 准确率函数
     accuracy = cal_accuracy(cls_prob=cls_prob, label=label)
     return image, label, bbox_target, landmark_target, label_cost, bbox_loss, landmark_loss, accuracy, conv4_1, conv4_2, conv4_3, temp
@@ -274,7 +274,7 @@ def cls_ohem(cls_prob, label):
 
     # 保留neg 0 和pos 1 的数据，将其他的设置为-100，在计算交叉熵时忽略掉，
     new_label, if_cond = where_op(label, 0, -100)
-    # new_label, if_cond = where_op(label, 0, 0)
+    new_label.stop_gradient = True
     # bool to float
     cast_if_cond = fluid.layers.cast(if_cond, np.float32)
     # 求保留之后的数量 * 0.7
@@ -284,32 +284,14 @@ def cls_ohem(cls_prob, label):
     keep_num.stop_gradient = True
     # 计算损失
     loss = fluid.layers.softmax_with_cross_entropy(cls_prob, new_label, ignore_index=-100)
-
-    # 自定义损失函数
-    # cls_prob_reshpae = fluid.layers.reshape(cls_prob, [cfg.batch_size * 2, -1])
-    # label_filter_invalid = fluid.layers.squeeze(new_label, axes=[])
-    # label_int = fluid.layers.cast(label_filter_invalid, np.int32)
-    # row = fluid.layers.range(0, cfg.batch_size, 1, dtype=np.int32) * 2
-    # indices_ = row + label_int
-    # # 计算损失值
-    # label_prob = fluid.layers.squeeze(fluid.layers.gather(cls_prob_reshpae, indices_), axes=[])
-    # loss1 = fluid.layers.log(label_prob + 1e-10)
-    # minus_ones = fluid.layers.fill_constant(shape=[cfg.batch_size, 1], dtype=np.float32, value=-1)
-    # loss1 = fluid.layers.elementwise_mul(minus_ones, loss1)
-    # # 保留neg 0 和pos 1 的数据的损失值
-    # thresh = fluid.layers.fill_constant([1], dtype='int64', value=1)
-    # thresh1 = fluid.layers.fill_constant([1], dtype='int64', value=0)
-    # thresh.stop_gradient = True
-    # thresh1.stop_gradient = True
-    # valid_inds = fluid.layers.logical_or(fluid.layers.equal(label, thresh), fluid.layers.equal(label, thresh1))
-    # valid_inds = fluid.layers.cast(valid_inds, np.float32)
-    # loss1 = loss1 * valid_inds
-
     # reshape ，求top
-    loss = fluid.layers.reshape(loss, [1, -1])
-    top_loss, _ = fluid.layers.topk(loss, k=keep_num)
-    top_loss = fluid.layers.reduce_mean(top_loss)
+    loss1 = fluid.layers.reshape(loss, [1, -1])
+    top_loss, top_index = fluid.layers.topk(loss1, k=keep_num)
 
+    top_loss.stop_gradient = True
+    top_index.stop_gradient = True
+
+    top_loss = fluid.layers.gather(loss, fluid.layers.reshape(top_index, [-1]))
     return top_loss, cls_prob
 
 
@@ -325,15 +307,13 @@ def bbox_ohem(bbox_pred, bbox_target, label):
     cast_if_cond = fluid.layers.cast(if_cond, np.float32)
     keep_num = fluid.layers.reduce_sum(cast_if_cond)
     # 转换为整数
-    keep_num = fluid.layers.cast(keep_num, np.int32)
     keep_num.stop_gradient = True
     # 求平方差损失
     square_error = fluid.layers.square_error_cost(input=bbox_pred, label=bbox_target)
     square_error = square_error * cast_if_cond
-    # reshape ，求top
-    square_error = fluid.layers.reshape(square_error, [1, -1])
-    square_error, _ = fluid.layers.topk(square_error, k=keep_num)
-    square_error = fluid.layers.reduce_mean(square_error)
+
+    # avoid divide zero
+    square_error = fluid.layers.reduce_sum(square_error) / (fluid.layers.relu(keep_num - 1.0) + 1.0)
     return square_error
 
 
@@ -346,16 +326,10 @@ def landmark_ohem(landmark_pred, landmark_target, label):
     # bool to float
     cast_if_cond = fluid.layers.cast(if_cond, np.float32)
     keep_num = fluid.layers.reduce_sum(cast_if_cond)
-    # 转换为整数
-    keep_num = fluid.layers.cast(keep_num, np.int32)
     keep_num.stop_gradient = True
-    # 求平方差损失
     square_error = fluid.layers.square_error_cost(input=landmark_pred, label=landmark_target)
     square_error = square_error * cast_if_cond
-    # reshape ，求top
-    square_error = fluid.layers.reshape(square_error, [1, -1])
-    square_error, _ = fluid.layers.topk(square_error, k=keep_num)
-    square_error = fluid.layers.reduce_mean(square_error)
+    square_error = fluid.layers.reduce_sum(square_error) / (fluid.layers.relu(keep_num - 1.0) + 1.0)
     return square_error
 
 

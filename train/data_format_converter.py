@@ -2,6 +2,8 @@ import os
 import struct
 import uuid
 from tqdm import tqdm
+import numpy as np
+import cv2
 
 
 class DataSetWriter(object):
@@ -10,8 +12,6 @@ class DataSetWriter(object):
         self.data_file = open(prefix + '.data', 'wb')
         self.header_file = open(prefix + '.header', 'wb')
         self.label_file = open(prefix + '.label', 'wb')
-        self.box_file = open(prefix + '.box', 'wb')
-        self.landmark_file = open(prefix + '.landmark', 'wb')
         self.offset = 0
         self.header = ''
 
@@ -29,14 +29,6 @@ class DataSetWriter(object):
     def add_label(self, label):
         # 写入标签数据
         self.label_file.write(label.encode('ascii') + '\n'.encode('ascii'))
-
-    def add_bbox(self, box):
-        # 写入人脸box数据
-        self.box_file.write(box.encode('ascii') + '\n'.encode('ascii'))
-
-    def add_landmark(self, landmark):
-        # 写入人脸关键点数据
-        self.landmark_file.write(landmark.encode('ascii') + '\n'.encode('ascii'))
 
 
 # 人脸识别训练数据的格式转换
@@ -71,17 +63,16 @@ def convert_data(data_folder, output_prefix):
             image, label, bbox, landmark = record
             key = str(uuid.uuid1())
             img = open(image, 'rb').read()
+            load_img = cv2.imdecode(np.fromstring(img, dtype=np.uint8), 1)
+            dummy, img = cv2.imencode('.bmp', load_img)
             # 写入对应的数据
-            writer.add_img(key, img)
-            writer.add_label(key + '\t' + str(label))
-            writer.add_bbox(key + '\t' + str(bbox[0]) + '\t' + str(bbox[1]) + '\t' + str(bbox[2]) + '\t' + str(bbox[3]))
-            writer.add_landmark(
-                key + '\t' + str(landmark[0]) + '\t' + str(landmark[1]) + '\t' + str(landmark[2]) + '\t' + str(
-                    landmark[3]) + '\t' + str(landmark[4]) + '\t' + str(landmark[5]) + '\t' + str(
-                    landmark[6]) + '\t' + str(
-                    landmark[7]) + '\t' + str(landmark[8]) + '\t' + str(landmark[9]))
+            writer.add_img(key, img.tostring())
+            label_str = str(label)
+            bbox_str = ' '.join([str(x) for x in bbox])
+            landmark_str = ' '.join([str(x) for x in landmark])
+            writer.add_label('\t'.join([key, bbox_str, landmark_str, label_str]))
         except:
-            pass
+            raise
 
 
 if __name__ == '__main__':
