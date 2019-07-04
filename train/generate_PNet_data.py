@@ -180,10 +180,10 @@ def crop_12_box_image(data_path):
 
 # 合并图像后删除原来的文件
 def delete_old_img(old_image_folder):
-    shutil.rmtree(os.path.join(old_image_folder, 'positive'), ignore_errors=True)
-    shutil.rmtree(os.path.join(old_image_folder, 'negative'), ignore_errors=True)
-    shutil.rmtree(os.path.join(old_image_folder, 'part'), ignore_errors=True)
-    shutil.rmtree(os.path.join(old_image_folder, 'landmark'), ignore_errors=True)
+    shutil.rmtree(os.path.join(old_image_folder, '12', 'positive'), ignore_errors=True)
+    shutil.rmtree(os.path.join(old_image_folder, '12', 'negative'), ignore_errors=True)
+    shutil.rmtree(os.path.join(old_image_folder, '12', 'part'), ignore_errors=True)
+    shutil.rmtree(os.path.join(old_image_folder, '12', 'landmark'), ignore_errors=True)
 
 
 if __name__ == '__main__':

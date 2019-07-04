@@ -1,5 +1,9 @@
-import os
+import numpy
 
-data_path = 'D:/User/wgy/workplace/data'
+s = [1,2,3,4]
 
-print(os.path.join(data_path, '12', 'all_data'))
+n = numpy.array(s)
+
+q = n[numpy.newaxis, numpy.newaxis, ]
+
+print(q)

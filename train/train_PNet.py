@@ -33,38 +33,38 @@ f = open(label_file, 'r')
 num = len(f.readlines())
 
 # 定义优化方法
-_, learning_rate = optimize(avg_total_loss, num, cfg.batch_size)
+_, learning_rate = optimize(avg_total_loss, num, cfg.BATCH_SIZE)
 
 # 获取自定义数据
-train_reader = myreader.train_reader('../data/12/all_data', label_file, batch_size=cfg.batch_size)
+train_reader = myreader.train_reader('../data/12/all_data', label_file, batch_size=cfg.BATCH_SIZE)
 
 # 定义一个使用GPU的执行器
-# place = fluid.CUDAPlace(0)
-place = fluid.CPUPlace()
+place = fluid.CUDAPlace(0) if cfg.USE_GPU else fluid.CPUPlace()
 exe = fluid.Executor(place)
 # 进行参数初始化
 exe.run(fluid.default_startup_program())
 
 # 设置输出的结果
-fetch_list = [avg_total_loss, accuracy, learning_rate, label_cost, bbox_loss, landmark_loss]
+fetch_list = [avg_total_loss, accuracy, learning_rate, label_cost, bbox_loss, landmark_loss, conv4_1]
 
 # 训练
 for pass_id in range(30):
     # 进行训练
     for batch_id, data in enumerate(train_reader()):
-        train_cost, acc, lr, label_cost1, bbox_loss1, landmark_loss1 = exe.run(program=fluid.default_main_program(),
+        train_cost, acc, lr, label_cost1, bbox_loss1, landmark_loss1, temp = exe.run(program=fluid.default_main_program(),
                                                                                feed={image.name: data[0],
                                                                                      label.name: data[1],
                                                                                      bbox_target.name: data[2],
                                                                                      landmark_target.name: data[3], },
-                                                                               fetch_list=fetch_list)
+                                                                               fetch_list=fetch_list,
+                                                                               use_program_cache=True)
 
         # 每100个batch打印一次信息
-        if batch_id % 10 == 0:
-            print(
-                'Pass:%d, Batch:%d, Cost:%0.5f, labelcost:%0.5f, boxloss:%0.5f, landmarkloss : %0.5f, Accuracy：'
-                '%0.5f, Learning rate:%0.7f' % (pass_id, batch_id, np.mean(train_cost), np.mean(label_cost1),
-                                                np.mean(bbox_loss1), np.mean(landmark_loss1), acc[0], lr[0]))
+        if batch_id % 100 == 0:
+            # print(temp)
+            print('Pass:%d, Batch:%d, Cost:%0.5f, labelcost:%0.5f, boxloss:%0.5f, landmarkloss : %0.5f, Accuracy：'
+                  '%0.5f, Learning rate:%0.7f' % (pass_id, batch_id, train_cost[0], label_cost1[0],
+                                                  bbox_loss1[0], landmark_loss1[0], acc[0], lr[0]))
 
     # 保存预测模型
     save_path = '../infer_model/PNet/'

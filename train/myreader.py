@@ -61,7 +61,7 @@ def train_mapper(sample):
     # 转换成CHW
     image = image.transpose((2, 0, 1))
     # 转换成BGR
-    image = image[(2, 1, 0), :, :] / 255.0
+    image = (image[(2, 1, 0), :, :] - 127.5) / 128
     return image, [int(label)], bbox, landmark
 
 

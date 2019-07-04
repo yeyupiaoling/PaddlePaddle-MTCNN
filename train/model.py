@@ -74,11 +74,11 @@ def P_Net():
 
     # 获取是否人脸分类交叉熵损失函数
     cls_prob = fluid.layers.squeeze(input=conv4_1_softmax, axes=[], name='cls_prob')
+    print(cls_prob)
     label_cost, temp = cls_ohem(cls_prob=cls_prob, label=label)
 
     # 获取人脸box回归平方差损失函数
     bbox_pred = fluid.layers.squeeze(input=conv4_2, axes=[], name='bbox_pred')
-    print('bbox_pred', bbox_pred.shape)
     bbox_loss = bbox_ohem(bbox_pred=bbox_pred, bbox_target=bbox_target, label=label)
 
     # 获取人脸5个关键点回归平方差损失函数
@@ -86,7 +86,7 @@ def P_Net():
     landmark_loss = landmark_ohem(landmark_pred=landmark_pred, landmark_target=landmark_target, label=label)
     # 准确率函数
     accuracy = cal_accuracy(cls_prob=cls_prob, label=label)
-    return image, label, bbox_target, landmark_target, label_cost, bbox_loss, landmark_loss, accuracy, conv4_1, conv4_2, conv4_3, temp
+    return image, label, bbox_target, landmark_target, label_cost, bbox_loss, landmark_loss, accuracy, cls_prob, bbox_pred, landmark_pred, temp
 
 
 def R_Net():
@@ -278,7 +278,7 @@ def cls_ohem(cls_prob, label):
     # bool to float
     cast_if_cond = fluid.layers.cast(if_cond, np.float32)
     # 求保留之后的数量 * 0.7
-    keep_num = (cfg.batch_size - fluid.layers.reduce_sum(cast_if_cond)) * cfg.keep_ratio
+    keep_num = (cfg.BATCH_SIZE - fluid.layers.reduce_sum(cast_if_cond)) * cfg.KEEP_RATIO
     # 转换为整数
     keep_num = fluid.layers.cast(keep_num, np.int32)
     keep_num.stop_gradient = True
