@@ -1,5 +1,5 @@
 import pickle
-
+import shutil
 import numpy as np
 import random
 import os
@@ -21,36 +21,36 @@ class BBox:
         self.h = box[3] - box[1]
 
     def project(self, point):
-        '''将关键点的绝对值转换为相对于左上角坐标偏移并归一化
+        """将关键点的绝对值转换为相对于左上角坐标偏移并归一化
         参数：
           point：某一关键点坐标(x,y)
         返回值：
           处理后偏移
-        '''
+        """
         x = (point[0] - self.x) / self.w
         y = (point[1] - self.y) / self.h
         return np.asarray([x, y])
 
     def reproject(self, point):
-        '''将关键点的相对值转换为绝对值，与project相反
+        """将关键点的相对值转换为绝对值，与project相反
         参数：
           point:某一关键点的相对归一化坐标
         返回值：
           处理后的绝对坐标
-        '''
+        """
         x = self.x + self.w * point[0]
         y = self.y + self.h * point[1]
         return np.asarray([x, y])
 
     def reprojectLandmark(self, landmark):
-        '''对所有关键点进行reproject操作'''
+        """对所有关键点进行reproject操作"""
         p = np.zeros((len(landmark), 2))
         for i in range(len(landmark)):
             p[i] = self.reproject(landmark[i])
         return p
 
     def projectLandmark(self, landmark):
-        '''对所有关键点进行project操作'''
+        """对所有关键点进行project操作"""
         p = np.zeros((len(landmark), 2))
         for i in range(len(landmark)):
             p[i] = self.project(landmark[i])
@@ -58,13 +58,13 @@ class BBox:
 
 
 def IOU(box, boxes):
-    '''裁剪的box和图片所有人脸box的iou值
+    """裁剪的box和图片所有人脸box的iou值
     参数：
       box：裁剪的box,当box维度为4时表示box左上右下坐标，维度为5时，最后一维为box的置信度
       boxes：图片所有人脸box,[n,4]
     返回值：
       iou值，[n,]
-    '''
+    """
     # box面积
     box_area = (box[2] - box[0] + 1) * (box[3] - box[1] + 1)
     # boxes面积,[n,]
@@ -120,12 +120,12 @@ def read_annotation(base_dir, label_path):
 
 
 def convert_to_square(box):
-    '''将box转换成更大的正方形
+    """将box转换成更大的正方形
     参数：
       box：预测的box,[n,5]
     返回值：
       调整后的正方形box，[n,5]
-    '''
+    """
     square_box = box.copy()
     h = box[:, 3] - box[:, 1] + 1
     w = box[:, 2] - box[:, 0] + 1
@@ -140,14 +140,14 @@ def convert_to_square(box):
 
 
 def getDataFromTxt(txt, data_path, with_landmark=True):
-    '''获取txt中的图像路径，人脸box，人脸关键点
+    """获取txt中的图像路径，人脸box，人脸关键点
     参数：
       txt：数据txt文件
       data_path:数据存储目录
       with_landmark:是否留有关键点
     返回值：
       result包含(图像路径，人脸box，关键点)
-    '''
+    """
     with open(txt, 'r') as f:
         lines = f.readlines()
     result = []
@@ -174,10 +174,10 @@ def getDataFromTxt(txt, data_path, with_landmark=True):
 
 
 def combine_data_list(data_dir):
-    '''把每个数据列表放在同一个文件上
+    """把每个数据列表放在同一个文件上
     参数：
       data_dir：已经裁剪后的文件夹
-    '''
+    """
     npr = np.random
     with open(os.path.join(data_dir, 'positive.txt'), 'r') as f:
         pos = f.readlines()
@@ -188,7 +188,7 @@ def combine_data_list(data_dir):
     with open(os.path.join(data_dir, 'landmark.txt'), 'r') as f:
         landmark = f.readlines()
     with open(os.path.join(data_dir, 'all_data_list.txt'), 'w') as f:
-        base_num = 250000
+        base_num = 250000 if len(pos) > 250000 else len(pos)
         print('整理前的数据：neg数量：{} pos数量：{} part数量:{} 基数:{}'.format(len(neg), len(pos), len(part), base_num))
         # 打乱写入的数据顺序
         if len(neg) > base_num * 3:
@@ -218,12 +218,12 @@ def combine_data_list(data_dir):
 
 
 def crop_landmark_image(data_dir, size, argument=True):
-    '''裁剪并保存带有人脸关键点的图片
+    """裁剪并保存带有人脸关键点的图片
     参数：
       data_dir：数据目录
       size:裁剪图片的大小
       argument:是否进行数据增强
-    '''
+    """
     npr = np.random
     image_id = 0
 
@@ -385,12 +385,12 @@ def rotate(img, box, landmark, alpha):
 
 
 def convert_to_square(box):
-    '''将box转换成更大的正方形
+    """将box转换成更大的正方形
     参数：
       box：预测的box,[n,5]
     返回值：
       调整后的正方形box，[n,5]
-    '''
+    """
     square_box = box.copy()
     h = box[:, 3] - box[:, 1] + 1
     w = box[:, 2] - box[:, 0] + 1
@@ -405,12 +405,12 @@ def convert_to_square(box):
 
 
 def read_annotation(data_path, label_path):
-    '''
+    """
     从原标注数据中获取图片路径和标注box
     :param data_path: 数据的根目录
     :param label_path: 标注数据的文件
     :return:
-    '''
+    """
     data = dict()
     images = []
     bboxes = []
@@ -448,13 +448,237 @@ def read_annotation(data_path, label_path):
     return data
 
 
+def pad(bboxes, w, h):
+    """将超出图像的box进行处理
+    参数：
+      bboxes:人脸框
+      w,h:图像长宽
+    返回值：
+      dy, dx : 为调整后的box的左上角坐标相对于原box左上角的坐标
+      edy, edx : n为调整后的box右下角相对原box左上角的相对坐标
+      y, x : 调整后的box在原图上左上角的坐标
+      ex, ex : 调整后的box在原图上右下角的坐标
+      tmph, tmpw: 原始box的长宽
+    """
+    # box的长宽
+    tmpw, tmph = bboxes[:, 2] - bboxes[:, 0] + 1, bboxes[:, 3] - bboxes[:, 1] + 1
+    num_box = bboxes.shape[0]
+
+    dx, dy = np.zeros((num_box,)), np.zeros((num_box,))
+    edx, edy = tmpw.copy() - 1, tmph.copy() - 1
+    # box左上右下的坐标
+    x, y, ex, ey = bboxes[:, 0], bboxes[:, 1], bboxes[:, 2], bboxes[:, 3]
+    # 找到超出右下边界的box并将ex,ey归为图像的w,h
+    # edx,edy为调整后的box右下角相对原box左上角的相对坐标
+    tmp_index = np.where(ex > w - 1)
+    edx[tmp_index] = tmpw[tmp_index] + w - 2 - ex[tmp_index]
+    ex[tmp_index] = w - 1
+
+    tmp_index = np.where(ey > h - 1)
+    edy[tmp_index] = tmph[tmp_index] + h - 2 - ey[tmp_index]
+    ey[tmp_index] = h - 1
+    # 找到超出左上角的box并将x,y归为0
+    # dx,dy为调整后的box的左上角坐标相对于原box左上角的坐标
+    tmp_index = np.where(x < 0)
+    dx[tmp_index] = 0 - x[tmp_index]
+    x[tmp_index] = 0
+
+    tmp_index = np.where(y < 0)
+    dy[tmp_index] = 0 - y[tmp_index]
+    y[tmp_index] = 0
+
+    return_list = [dy, edy, dx, edx, y, ey, x, ex, tmpw, tmph]
+    return_list = [item.astype(np.int32) for item in return_list]
+
+    return return_list
+
+
+def calibrate_box(bbox, reg):
+    """校准box
+    参数：
+      bbox:pnet生成的box
+
+      reg:rnet生成的box偏移值
+    返回值：
+      调整后的box是针对原图的绝对坐标
+    """
+
+    bbox_c = bbox.copy()
+    w = bbox[:, 2] - bbox[:, 0] + 1
+    w = np.expand_dims(w, 1)
+    h = bbox[:, 3] - bbox[:, 1] + 1
+    h = np.expand_dims(h, 1)
+    reg_m = np.hstack([w, h, w, h])
+    aug = reg_m * reg
+    bbox_c[:, 0:4] = bbox_c[:, 0:4] + aug
+    return bbox_c
+
+
+def py_nms(dets, thresh):
+    """剔除太相似的box"""
+    x1 = dets[:, 0]
+    y1 = dets[:, 1]
+    x2 = dets[:, 2]
+    y2 = dets[:, 3]
+    scores = dets[:, 4]
+
+    areas = (x2 - x1 + 1) * (y2 - y1 + 1)
+    # 将概率值从大到小排列
+    order = scores.argsort()[::-1]
+
+    keep = []
+    while order.size > 0:
+        i = order[0]
+        keep.append(i)
+        xx1 = np.maximum(x1[i], x1[order[1:]])
+        yy1 = np.maximum(y1[i], y1[order[1:]])
+        xx2 = np.minimum(x2[i], x2[order[1:]])
+        yy2 = np.minimum(y2[i], y2[order[1:]])
+
+        w = np.maximum(0.0, xx2 - xx1 + 1)
+        h = np.maximum(0.0, yy2 - yy1 + 1)
+        inter = w * h
+
+        ovr = inter / (areas[i] + areas[order[1:]] - inter + 1e-10)
+
+        # 保留小于阈值的下标，因为order[0]拿出来做比较了，所以inds+1是原来对应的下标
+        inds = np.where(ovr <= thresh)[0]
+        order = order[inds + 1]
+
+    return keep
+
+
+def generate_bbox(cls_map, reg, scale, threshold):
+    """
+     得到对应原图的box坐标，分类分数，box偏移量
+    """
+    # pnet大致将图像size缩小2倍
+    stride = 2
+
+    cellsize = 12
+
+    # 将置信度高的留下
+    t_index = np.where(cls_map > threshold)
+
+    # 没有人脸
+    if t_index[0].size == 0:
+        return np.array([])
+    # 偏移量
+    dx1, dy1, dx2, dy2 = [reg[t_index[0], t_index[1], i] for i in range(4)]
+
+    reg = np.array([dx1, dy1, dx2, dy2])
+    score = cls_map[t_index[0], t_index[1]]
+    # 对应原图的box坐标，分类分数，box偏移量
+    boundingbox = np.vstack([np.round((stride * t_index[1]) / scale),
+                             np.round((stride * t_index[0]) / scale),
+                             np.round((stride * t_index[1] + cellsize) / scale),
+                             np.round((stride * t_index[0] + cellsize) / scale),
+                             score,
+                             reg])
+    # shape[n,9]
+    return boundingbox.T
+
+
+def save_hard_example(save_dir, save_size, data, neg_dir, pos_dir, part_dir):
+    """将网络识别的box用来裁剪原图像作为下一个网络的输入"""
+
+    im_idx_list = data['images']
+    gt_boxes_list = data['bboxes']
+    num_of_images = len(im_idx_list)
+
+    # 保存标注数据的文件
+    pos_file = open(os.path.join(save_dir, 'positive.txt'), 'w')
+    neg_file = open(os.path.join(save_dir, 'negative.txt'), 'w')
+    part_file = open(os.path.join(save_dir, 'part.txt'), 'w')
+
+    # 读取识别结果
+    det_boxes = pickle.load(open(os.path.join(save_dir, 'detections.pkl'), 'rb'))
+
+    assert len(det_boxes) == num_of_images, "det_boxes len not is num_of_images"
+
+    n_idx = 0
+    p_idx = 0
+    d_idx = 0
+    image_done = 0
+
+    for im_idx, dets, gts in tqdm(zip(im_idx_list, det_boxes, gt_boxes_list)):
+        gts = np.array(gts, dtype=np.float32).reshape(-1, 4)
+        image_done += 1
+
+        if dets.shape[0] == 0:
+            continue
+        img = cv2.imread(im_idx)
+        # 转换成正方形
+        dets = convert_to_square(dets)
+        dets[:, 0:4] = np.round(dets[:, 0:4])
+        neg_num = 0
+        for box in dets:
+            x_left, y_top, x_right, y_bottom, _ = box.astype(int)
+            width = x_right - x_left + 1
+            height = y_bottom - y_top + 1
+
+            # 除去过小的
+            if width < 20 or x_left < 0 or y_top < 0 or x_right > img.shape[1] - 1 or y_bottom > img.shape[0] - 1:
+                continue
+
+            Iou = IOU(box, gts)
+            cropped_im = img[y_top:y_bottom + 1, x_left:x_right + 1, :]
+            resized_im = cv2.resize(cropped_im, (save_size, save_size), interpolation=cv2.INTER_LINEAR)
+
+            # 划分种类
+            if np.max(Iou) < 0.3 and neg_num < 60:
+
+                save_file = os.path.join(neg_dir, "%s.jpg" % n_idx)
+
+                neg_file.write(save_file + ' 0\n')
+                cv2.imwrite(save_file, resized_im)
+                n_idx += 1
+                neg_num += 1
+            else:
+
+                idx = np.argmax(Iou)
+                assigned_gt = gts[idx]
+                x1, y1, x2, y2 = assigned_gt
+
+                # 偏移量
+                offset_x1 = (x1 - x_left) / float(width)
+                offset_y1 = (y1 - y_top) / float(height)
+                offset_x2 = (x2 - x_right) / float(width)
+                offset_y2 = (y2 - y_bottom) / float(height)
+
+                # pos和part
+                if np.max(Iou) >= 0.65:
+                    save_file = os.path.join(pos_dir, "%s.jpg" % p_idx)
+                    pos_file.write(
+                        save_file + ' 1 %.2f %.2f %.2f %.2f\n' % (offset_x1, offset_y1, offset_x2, offset_y2))
+                    cv2.imwrite(save_file, resized_im)
+                    p_idx += 1
+
+                elif np.max(Iou) >= 0.4:
+                    save_file = os.path.join(part_dir, "%s.jpg" % d_idx)
+                    part_file.write(
+                        save_file + ' -1 %.2f %.2f %.2f %.2f\n' % (offset_x1, offset_y1, offset_x2, offset_y2))
+                    cv2.imwrite(save_file, resized_im)
+                    d_idx += 1
+    neg_file.close()
+    part_file.close()
+    pos_file.close()
+
+
+# 合并图像后删除原来的文件
+def delete_old_img(old_image_folder, image_size):
+    shutil.rmtree(os.path.join(old_image_folder, image_size, 'positive'), ignore_errors=True)
+    shutil.rmtree(os.path.join(old_image_folder, image_size, 'negative'), ignore_errors=True)
+    shutil.rmtree(os.path.join(old_image_folder, image_size, 'part'), ignore_errors=True)
+    shutil.rmtree(os.path.join(old_image_folder, image_size, 'landmark'), ignore_errors=True)
+
 def save_hard_example(data_path, save_size):
-    '''
+    """
     根据预测的结果裁剪下一个网络所需要训练的图片的标注数据
     :param data_path: 数据的根目录
     :param save_size: 裁剪图片的大小
     :return:
-    '''
+    """
     # 获取原数据集中的标注数据
     filename = os.path.join(data_path, 'wider_face_train_bbx_gt.txt')
     data = read_annotation(data_path, filename)

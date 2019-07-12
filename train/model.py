@@ -53,8 +53,9 @@ def P_Net():
                                   param_attr=ParamAttr(initializer=Xavier(),
                                                        regularizer=L2DecayRegularizer(0.0005)),
                                   name='conv4_1')
+    conv4_1 = fluid.layers.transpose(conv4_1, [0, 2, 3, 1])
     conv4_1 = fluid.layers.squeeze(input=conv4_1, axes=[])
-    conv4_1_softmax = fluid.layers.softmax(input=conv4_1, use_cudnn=False)
+    conv4_1_softmax = fluid.layers.softmax(input=conv4_1)
 
     # 人脸box的回归卷积输出层
     conv4_2 = fluid.layers.conv2d(input=conv3_prelu,
@@ -63,6 +64,7 @@ def P_Net():
                                   param_attr=ParamAttr(initializer=Xavier(),
                                                        regularizer=L2DecayRegularizer(0.0005)),
                                   name='conv4_2')
+    conv4_2 = fluid.layers.transpose(conv4_2, [0, 2, 3, 1])
 
     # 5个关键点的回归卷积输出层
     conv4_3 = fluid.layers.conv2d(input=conv3_prelu,
@@ -71,11 +73,11 @@ def P_Net():
                                   param_attr=ParamAttr(initializer=Xavier(),
                                                        regularizer=L2DecayRegularizer(0.0005)),
                                   name='conv4_3')
+    conv4_3 = fluid.layers.transpose(conv4_3, [0, 2, 3, 1])
 
     # 获取是否人脸分类交叉熵损失函数
     cls_prob = fluid.layers.squeeze(input=conv4_1_softmax, axes=[], name='cls_prob')
-    print(cls_prob)
-    label_cost, temp = cls_ohem(cls_prob=cls_prob, label=label)
+    cls_loss = cls_ohem(cls_prob=cls_prob, label=label)
 
     # 获取人脸box回归平方差损失函数
     bbox_pred = fluid.layers.squeeze(input=conv4_2, axes=[], name='bbox_pred')
@@ -86,7 +88,7 @@ def P_Net():
     landmark_loss = landmark_ohem(landmark_pred=landmark_pred, landmark_target=landmark_target, label=label)
     # 准确率函数
     accuracy = cal_accuracy(cls_prob=cls_prob, label=label)
-    return image, label, bbox_target, landmark_target, label_cost, bbox_loss, landmark_loss, accuracy, cls_prob, bbox_pred, landmark_pred, temp
+    return image, label, bbox_target, landmark_target, cls_loss, bbox_loss, landmark_loss, accuracy, cls_prob, bbox_pred, landmark_pred
 
 
 def R_Net():
@@ -292,7 +294,7 @@ def cls_ohem(cls_prob, label):
     top_index.stop_gradient = True
 
     top_loss = fluid.layers.gather(loss, fluid.layers.reshape(top_index, [-1]))
-    return top_loss, cls_prob
+    return top_loss
 
 
 # 人脸box的平方差损失函数

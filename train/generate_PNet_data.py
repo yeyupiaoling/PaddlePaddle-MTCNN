@@ -1,10 +1,5 @@
-import os
-import cv2
-import numpy as np
-from tqdm import tqdm
-from utils import combine_data_list, IOU, crop_landmark_image
 from data_format_converter import convert_data
-import shutil
+from utils import *
 
 
 # 截取pos,neg,part三种类型图片并resize成12x12大小作为PNet的输入
@@ -178,14 +173,6 @@ def crop_12_box_image(data_path):
     f3.close()
 
 
-# 合并图像后删除原来的文件
-def delete_old_img(old_image_folder):
-    shutil.rmtree(os.path.join(old_image_folder, '12', 'positive'), ignore_errors=True)
-    shutil.rmtree(os.path.join(old_image_folder, '12', 'negative'), ignore_errors=True)
-    shutil.rmtree(os.path.join(old_image_folder, '12', 'part'), ignore_errors=True)
-    shutil.rmtree(os.path.join(old_image_folder, '12', 'landmark'), ignore_errors=True)
-
-
 if __name__ == '__main__':
     data_path = '../data/'
     # 获取人脸的box图片数据
@@ -202,4 +189,4 @@ if __name__ == '__main__':
     convert_data(os.path.join(data_path, '12'), os.path.join(data_path, '12', 'all_data'))
     # 删除旧数据
     print('开始删除就得图像文件')
-    delete_old_img(data_path)
+    delete_old_img(data_path, 12)
