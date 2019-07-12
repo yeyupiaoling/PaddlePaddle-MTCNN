@@ -72,7 +72,7 @@ def convert_data(data_folder, output_prefix):
             landmark_str = ' '.join([str(x) for x in landmark])
             writer.add_label('\t'.join([key, bbox_str, landmark_str, label_str]))
         except:
-            raise
+            continue
 
 
 if __name__ == '__main__':

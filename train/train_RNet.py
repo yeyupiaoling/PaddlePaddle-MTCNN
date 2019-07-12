@@ -29,7 +29,7 @@ _, learning_rate = optimize(avg_total_loss, num, batch_size)
 train_reader = myreader.train_reader('../data/24/all_data', label_file, batch_size=cfg.BATCH_SIZE)
 
 # 定义一个使用GPU的执行器
-place = fluid.CUDAPlace(0)
+place = fluid.CUDAPlace(0) if cfg.USE_GPU else fluid.CPUPlace()
 # place = fluid.CPUPlace()
 exe = fluid.Executor(place)
 # 进行参数初始化

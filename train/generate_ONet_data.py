@@ -229,10 +229,3 @@ if __name__ == '__main__':
     print('开始删除就得图像文件')
     delete_old_img(data_path, 48)
 
-    # im = cv2.imread('222.jpg')
-    # net_size = 12
-    # current_scale = float(net_size) / min_face_size
-    # im_resized = processed_image(im, current_scale)
-    # cls_prob, bbox_pred = predict(im_resized)
-    # print(cls_prob)
-    # print(bbox_pred)

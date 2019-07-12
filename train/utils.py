@@ -190,16 +190,14 @@ def combine_data_list(data_dir):
     with open(os.path.join(data_dir, 'all_data_list.txt'), 'w') as f:
         base_num = 250000 if len(pos) > 250000 else len(pos)
         print('整理前的数据：neg数量：{} pos数量：{} part数量:{} 基数:{}'.format(len(neg), len(pos), len(part), base_num))
-        # 打乱写入的数据顺序
-        if len(neg) > base_num * 3:
-            neg_keep = npr.choice(len(neg), size=base_num * 3, replace=True)
-        else:
-            neg_keep = npr.choice(len(neg), size=len(neg), replace=True)
-        sum_p = len(neg_keep) // 3
-        pos_keep = npr.choice(len(pos), sum_p, replace=True)
-        part_keep = npr.choice(len(part), sum_p, replace=True)
+        # 打乱写入的数据顺序，并这里这里设置比例，设置size参数的比例就能得到数据集比例, 论文比例为：3:1:1:2
+        neg_keep = npr.choice(len(neg), size=base_num * 3, replace=base_num > len(neg) * 3)
+        part_keep = npr.choice(len(part), size=base_num, replace=base_num > len(part))
+        pos_keep = npr.choice(len(pos), size=base_num, replace=base_num > len(pos))
+        landmark_keep = npr.choice(len(landmark), size=base_num * 2, replace=base_num > len(landmark) * 2)
 
-        print('整理后的数据：neg数量：{} pos数量：{} part数量:{}'.format(len(neg_keep), len(pos_keep), len(part_keep)))
+        print('整理后的数据：neg数量：{} pos数量：{} part数量:{} landmark数量：{}'.format(len(neg_keep), len(pos_keep), len(part_keep),
+                                                                        len(landmark_keep)))
         # 开始写入列表数据
         for i in pos_keep:
             f.write(pos[i])
@@ -667,10 +665,11 @@ def save_hard_example(save_dir, save_size, data, neg_dir, pos_dir, part_dir):
 
 # 合并图像后删除原来的文件
 def delete_old_img(old_image_folder, image_size):
-    shutil.rmtree(os.path.join(old_image_folder, image_size, 'positive'), ignore_errors=True)
-    shutil.rmtree(os.path.join(old_image_folder, image_size, 'negative'), ignore_errors=True)
-    shutil.rmtree(os.path.join(old_image_folder, image_size, 'part'), ignore_errors=True)
-    shutil.rmtree(os.path.join(old_image_folder, image_size, 'landmark'), ignore_errors=True)
+    shutil.rmtree(os.path.join(old_image_folder, str(image_size), 'positive'), ignore_errors=True)
+    shutil.rmtree(os.path.join(old_image_folder, str(image_size), 'negative'), ignore_errors=True)
+    shutil.rmtree(os.path.join(old_image_folder, str(image_size), 'part'), ignore_errors=True)
+    shutil.rmtree(os.path.join(old_image_folder, str(image_size), 'landmark'), ignore_errors=True)
+
 
 def save_hard_example(data_path, save_size):
     """
