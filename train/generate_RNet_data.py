@@ -130,7 +130,7 @@ def crop_24_box_image(data_path, base_dir, filename, min_face_size, scale_factor
     with open(save_file, 'wb') as f:
         pickle.dump(all_boxes, f, 1)
 
-    save_hard_example(save_dir, 24, data, neg_save_dir, pos_save_dir, part_save_dir)
+    save_hard_example(save_dir, 24)
 
 
 if __name__ == '__main__':
