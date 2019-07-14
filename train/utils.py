@@ -135,10 +135,10 @@ def combine_data_list(data_dir):
         base_num = 250000 if len(pos) > 250000 else len(pos)
         print('整理前的数据：neg数量：{} pos数量：{} part数量:{} 基数:{}'.format(len(neg), len(pos), len(part), base_num))
         # 打乱写入的数据顺序，并这里这里设置比例，设置size参数的比例就能得到数据集比例, 论文比例为：3:1:1:2
-        neg_keep = npr.choice(len(neg), size=base_num * 3, replace=base_num > len(neg) * 3)
+        neg_keep = npr.choice(len(neg), size=base_num * 3, replace=base_num * 3 > len(neg))
         part_keep = npr.choice(len(part), size=base_num, replace=base_num > len(part))
         pos_keep = npr.choice(len(pos), size=base_num, replace=base_num > len(pos))
-        landmark_keep = npr.choice(len(landmark), size=base_num * 2, replace=base_num > len(landmark) * 2)
+        landmark_keep = npr.choice(len(landmark), size=base_num * 2, replace=base_num * 2 > len(landmark))
 
         print('整理后的数据：neg数量：{} pos数量：{} part数量:{} landmark数量：{}'.format(len(neg_keep), len(pos_keep), len(part_keep),
                                                                         len(landmark_keep)))
@@ -149,8 +149,8 @@ def combine_data_list(data_dir):
             f.write(neg[i])
         for i in part_keep:
             f.write(part[i])
-        for item in landmark:
-            f.write(item)
+        for i in landmark_keep:
+            f.write(landmark[i])
 
     # 删除原来的数据列表文件
     os.remove(os.path.join(data_dir, 'positive.txt'))

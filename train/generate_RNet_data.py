@@ -119,18 +119,18 @@ def crop_24_box_image(data_path, base_dir, filename, min_face_size, scale_factor
         assert os.path.exists(image_path), 'image not exists'
         im = cv2.imread(image_path)
         boxes, boxes_c, _ = detect_pnet(im, min_face_size, scale_factor, thresh)
-        all_boxes.append(boxes_c)
         if boxes_c is None:
             all_boxes.append(empty_array)
             landmarks.append(empty_array)
             continue
+        all_boxes.append(boxes_c)
 
     # 把识别结果存放在文件中
     save_file = os.path.join(save_dir, 'detections.pkl')
     with open(save_file, 'wb') as f:
         pickle.dump(all_boxes, f, 1)
 
-    save_hard_example(save_dir, 24)
+    save_hard_example(data_path, 24)
 
 
 if __name__ == '__main__':
