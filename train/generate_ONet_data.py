@@ -5,8 +5,8 @@ from utils import *
 np.set_printoptions(threshold=np.inf)
 
 # 获取执行器
-place = fluid.CUDAPlace(0)
-# place = fluid.CPUPlace()
+# place = fluid.CUDAPlace(0)
+place = fluid.CPUPlace()
 pnet_exe = fluid.Executor(place)
 rnet_exe = fluid.Executor(place)
 
@@ -154,7 +154,7 @@ def detect_rnet(im, dets, thresh):
 
 
 # 截取pos,neg,part三种类型图片并resize成24x24大小作为RNet的输入
-def crop_48_box_image(data_path, base_dir, filename, min_face_size, scale_factor, p_thresh, r_thresh):
+def crop_48_box_image(data_path, filename, min_face_size, scale_factor, p_thresh, r_thresh):
     # pos，part,neg裁剪图片放置位置
     pos_save_dir = os.path.join(data_path, '48/positive')
     part_save_dir = os.path.join(data_path, '48/part')
@@ -173,7 +173,7 @@ def crop_48_box_image(data_path, base_dir, filename, min_face_size, scale_factor
         os.mkdir(neg_save_dir)
 
     # 读取标注数据
-    data = read_annotation(base_dir, filename)
+    data = read_annotation(data_path, filename)
     all_boxes = []
     landmarks = []
     empty_array = np.array([])
@@ -182,7 +182,6 @@ def crop_48_box_image(data_path, base_dir, filename, min_face_size, scale_factor
     for image_path in tqdm(data['images']):
         assert os.path.exists(image_path), 'image not exists'
         im = cv2.imread(image_path)
-
         boxes, boxes_c, _ = detect_pnet(im, min_face_size, scale_factor, p_thresh)
         if boxes_c is None:
             all_boxes.append(empty_array)
@@ -202,7 +201,7 @@ def crop_48_box_image(data_path, base_dir, filename, min_face_size, scale_factor
     with open(save_file, 'wb') as f:
         pickle.dump(all_boxes, f, 1)
 
-    save_hard_example(save_dir, 48)
+    save_hard_example(data_path, 48)
 
 
 if __name__ == '__main__':
@@ -215,7 +214,7 @@ if __name__ == '__main__':
     r_thresh = 0.7
     # 获取人脸的box图片数据
     print('开始生成bbox图像数据')
-    crop_48_box_image(data_path, data_path, filename, min_face_size, scale_factor, p_thresh, r_thresh)
+    crop_48_box_image(data_path, filename, min_face_size, scale_factor, p_thresh, r_thresh)
     # 获取人脸关键点的数据
     print('开始生成landmark图像数据')
     crop_landmark_image(data_path, 48, argument=True)

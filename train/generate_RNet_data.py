@@ -90,7 +90,7 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
 
 
 # 截取pos,neg,part三种类型图片并resize成24x24大小作为RNet的输入
-def crop_24_box_image(data_path, base_dir, filename, min_face_size, scale_factor, thresh):
+def crop_24_box_image(data_path, filename, min_face_size, scale_factor, thresh):
     # pos，part,neg裁剪图片放置位置
     pos_save_dir = os.path.join(data_path, '24/positive')
     part_save_dir = os.path.join(data_path, '24/part')
@@ -109,7 +109,7 @@ def crop_24_box_image(data_path, base_dir, filename, min_face_size, scale_factor
         os.mkdir(neg_save_dir)
 
     # 读取标注数据
-    data = read_annotation(base_dir, filename)
+    data = read_annotation(data_path, filename)
     all_boxes = []
     landmarks = []
     empty_array = np.array([])
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     thresh = 0.6
     # 获取人脸的box图片数据
     print('开始生成bbox图像数据')
-    crop_24_box_image(data_path, data_path, filename, min_face_size, scale_factor, thresh)
+    crop_24_box_image(data_path, filename, min_face_size, scale_factor, thresh)
     # 获取人脸关键点的数据
     print('开始生成landmark图像数据')
     crop_landmark_image(data_path, 24, argument=True)
@@ -155,4 +155,3 @@ if __name__ == '__main__':
     # 删除旧数据
     print('开始删除就得图像文件')
     delete_old_img(data_path, 24)
-

@@ -132,8 +132,8 @@ def combine_data_list(data_dir):
     with open(os.path.join(data_dir, 'landmark.txt'), 'r') as f:
         landmark = f.readlines()
     with open(os.path.join(data_dir, 'all_data_list.txt'), 'w') as f:
-        base_num = 250000 if len(pos) > 250000 else len(pos)
-        print('整理前的数据：neg数量：{} pos数量：{} part数量:{} 基数:{}'.format(len(neg), len(pos), len(part), base_num))
+        base_num = 250000 if len(pos) > 250000 else 1000
+        print('整理前的数据：neg数量：{} pos数量：{} part数量:{} landmark: {} 基数:{}'.format(len(neg), len(pos), len(part), len(landmark), base_num))
         # 打乱写入的数据顺序，并这里这里设置比例，设置size参数的比例就能得到数据集比例, 论文比例为：3:1:1:2
         neg_keep = npr.choice(len(neg), size=base_num * 3, replace=base_num * 3 > len(neg))
         part_keep = npr.choice(len(part), size=base_num, replace=base_num > len(part))
