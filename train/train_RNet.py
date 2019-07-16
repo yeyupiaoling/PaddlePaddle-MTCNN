@@ -30,7 +30,6 @@ train_reader = myreader.train_reader('../data/24/all_data', label_file, batch_si
 
 # 定义一个使用GPU的执行器
 place = fluid.CUDAPlace(0) if cfg.USE_GPU else fluid.CPUPlace()
-# place = fluid.CPUPlace()
 exe = fluid.Executor(place)
 # 进行参数初始化
 exe.run(fluid.default_startup_program())

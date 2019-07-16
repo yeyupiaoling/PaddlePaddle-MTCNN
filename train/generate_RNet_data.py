@@ -14,6 +14,7 @@ exe = fluid.Executor(place)
                                                                                executor=exe)
 
 
+# 使用RNet模型预测
 def predict(infer_data):
     # 添加待预测的图片
     infer_data = infer_data[np.newaxis,]
@@ -24,8 +25,8 @@ def predict(infer_data):
     return cls_prob, bbox_pred
 
 
+# 预处理数据，转化图像尺度并对像素归一
 def processed_image(img, scale):
-    """预处理数据，转化图像尺度并对像素归一到[-1,1]"""
     height, width, channels = img.shape
     new_height = int(height * scale)
     new_width = int(width * scale)

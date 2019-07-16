@@ -15,6 +15,7 @@ infer_rnet_scope = fluid.core.Scope()
 infer_onet_scope = fluid.core.Scope()
 
 
+# 使用PNet模型预测
 def predict_pnet(infer_data):
     with fluid.scope_guard(infer_pnet_scope):
         # 从保存的模型文件中获取预测程序、输入数据的名称和输出层
@@ -29,6 +30,7 @@ def predict_pnet(infer_data):
         return cls_prob, bbox_pred
 
 
+# 使用RNet预测
 def predict_rnet(infer_data):
     with fluid.scope_guard(infer_rnet_scope):
         # 从保存的模型文件中获取预测程序、输入数据的名称和输出层
@@ -41,6 +43,7 @@ def predict_rnet(infer_data):
         return cls_prob, bbox_pred
 
 
+# 使用ONet模型预测
 def predict_onet(infer_data):
     with fluid.scope_guard(infer_onet_scope):
         # 从保存的模型文件中获取预测程序、输入数据的名称和输出层
@@ -53,9 +56,8 @@ def predict_onet(infer_data):
         return cls_prob, bbox_pred, landmark_pred
 
 
+# 预处理数据，转化图像尺度并对像素归一
 def processed_image(img, scale):
-    '''预处理数据，转化图像尺度并对像素归一到[-1,1]
-    '''
     height, width, channels = img.shape
     new_height = int(height * scale)
     new_width = int(width * scale)
@@ -70,6 +72,7 @@ def processed_image(img, scale):
     return image
 
 
+# 获取PNet网络输出结果
 def detect_pnet(im, min_face_size, scale_factor, thresh):
     """通过pnet筛选box和landmark
     参数：
@@ -118,7 +121,7 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
 
     return boxes_c
 
-
+# 获取RNet网络输出结果
 def detect_rnet(im, dets, thresh):
     """通过rent选择box
         参数：
@@ -165,7 +168,7 @@ def detect_rnet(im, dets, thresh):
     boxes_c = calibrate_box(boxes, reg[keep])
     return boxes_c
 
-
+# 获取ONet模型预测结果
 def detect_onet(im, dets, thresh):
     """将onet的选框继续筛选基本和rnet差不多但多返回了landmark"""
     h, w, c = im.shape
@@ -205,18 +208,20 @@ def detect_onet(im, dets, thresh):
     return boxes_c, landmark
 
 
+# 预测图片
 def infer_image(image_path):
     im = cv2.imread(image_path)
+    # 调用第一个模型预测
     boxes_c = detect_pnet(im, 20, 0.79, 0.6)
     print(boxes_c.shape)
     if boxes_c is None:
         return None, None
-
+    # 调用第二个模型预测
     boxes_c = detect_rnet(im, boxes_c, 0.7)
     print(boxes_c.shape)
     if boxes_c is None:
         return None, None
-
+    # 调用第三个模型预测
     boxes_c, landmark = detect_onet(im, boxes_c, 0.7)
     print(boxes_c.shape)
     if boxes_c is None:
@@ -227,8 +232,10 @@ def infer_image(image_path):
 
 if __name__ == '__main__':
     image_path = '222.jpg'
+    # 预测图片获取人脸的box和关键点
     boxes_c, landmarks = infer_image(image_path)
     img = cv2.imread(image_path)
+    # 把关键画出来
     if boxes_c is not None:
         for i in range(boxes_c.shape[0]):
             bbox = boxes_c[i, :4]

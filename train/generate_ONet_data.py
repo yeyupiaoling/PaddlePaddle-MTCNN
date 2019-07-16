@@ -1,19 +1,19 @@
 import paddle.fluid as fluid
+import config as cfg
 from data_format_converter import convert_data
 from utils import *
 
-np.set_printoptions(threshold=np.inf)
-
 # 获取执行器
-# place = fluid.CUDAPlace(0)
-place = fluid.CPUPlace()
+place = fluid.CUDAPlace(0) if cfg.USE_GPU else fluid.CPUPlace()
 pnet_exe = fluid.Executor(place)
 rnet_exe = fluid.Executor(place)
 
+# 定义两个预测块
 infer_pnet_scope = fluid.core.Scope()
 infer_rnet_scope = fluid.core.Scope()
 
 
+# 使用PNet模型预测
 def predict_pnet(infer_data):
     with fluid.scope_guard(infer_pnet_scope):
         # 从保存的模型文件中获取预测程序、输入数据的名称和输出层
@@ -28,6 +28,7 @@ def predict_pnet(infer_data):
         return cls_prob, bbox_pred
 
 
+# 使用RNet模型预测
 def predict_rnet(infer_data):
     with fluid.scope_guard(infer_rnet_scope):
         # 从保存的模型文件中获取预测程序、输入数据的名称和输出层
@@ -40,9 +41,8 @@ def predict_rnet(infer_data):
         return cls_prob, bbox_pred
 
 
+# 预处理数据，转化图像尺度并对像素归一到
 def processed_image(img, scale):
-    '''预处理数据，转化图像尺度并对像素归一到[-1,1]
-    '''
     height, width, channels = img.shape
     new_height = int(height * scale)
     new_width = int(width * scale)
@@ -227,4 +227,3 @@ if __name__ == '__main__':
     # 删除旧数据
     print('开始删除就得图像文件')
     delete_old_img(data_path, 48)
-

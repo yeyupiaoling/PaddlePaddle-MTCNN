@@ -73,7 +73,3 @@ def convert_data(data_folder, output_prefix):
             writer.add_label('\t'.join([key, bbox_str, landmark_str, label_str]))
         except:
             continue
-
-
-if __name__ == '__main__':
-    convert_data('../data/12/', '../data/12/all_data')
