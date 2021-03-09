@@ -1,7 +1,7 @@
 .idea/
 models/__pycache__/
 utils/__pycache__/
-dataset/
+dataset/*
 !dataset/wider_face_train.txt
 !dataset/test.jpg
 infer_models/
