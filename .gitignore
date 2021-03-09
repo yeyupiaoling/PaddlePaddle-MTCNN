@@ -1,11 +1,7 @@
-train/__pycache__/
-train/.idea/
 .idea/
-data/12/
-data/24/
-data/48/
-data/lfw_5590/
-data/net_7876/
-data/WIDER_train/
-data/wider_face_train.txt
-data/wider_face_train_bbx_gt.txt
+models/__pycache__/
+utils/__pycache__/
+dataset/
+!dataset/wider_face_train.txt
+!dataset/test.jpg
+infer_models/

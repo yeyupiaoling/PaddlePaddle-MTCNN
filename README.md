@@ -20,11 +20,14 @@
 ## 其他目录
  - `data` 存放训练数据
  - `infer_model` 存放训练保存的预测模型
+
+## 数据集下载
+ - [WIDER Face](http://mmlab.ie.cuhk.edu.hk/projects/WIDERFace/) 下载训练数据WIDER Face Training Images，解压的WIDER_train文件夹放置到dataset下。并下载 [Face annotations](http://mmlab.ie.cuhk.edu.hk/projects/WIDERFace/support/bbx_annotation/wider_face_split.zip) ，解压把里面的 wider_face_train_bbx_gt.txt 文件放在dataset目录下，
+ - [Deep Convolutional Network Cascade for Facial Point Detection](http://mmlab.ie.cuhk.edu.hk/archive/CNN_FacePoint.htm) 。下载 Training set 并解压，将里面的 lfw_5590 和 net_7876 文件夹放置到dataset下
+ - 解压数据集之后，`dataset`目录下应该有文件夹`lfw_5590`，`net_7876`，`WIDER_train`，有标注文件`testImageList.txt`，`trainImageList.txt`，`wider_face_train.txt`，`wider_face_train_bbx_gt.txt`
+
  
 ## 第一步 训练PNet模型
- - [WIDER Face](http://mmlab.ie.cuhk.edu.hk/projects/WIDERFace/) 下载训练数据WIDER Face Training Images，解压的WIDER_train文件夹放置到data下。并下载 Face annotations ，解压把里面的 wider_face_train.txt 和 wider_face_train_bbx_gt.txt 文件放在data目录下，
- - [Deep Convolutional Network Cascade for Facial Point Detection](http://mmlab.ie.cuhk.edu.hk/archive/CNN_FacePoint.htm) 。下载 Training set 并解压，将里面的 lfw_5590 和 net_7876 文件夹放置到data下
- - 解压数据集之后，`data`目录下应该有文件夹`lfw_5590`，`net_7876`，`WIDER_train`，有标注文件`testImageList.txt`，`trainImageList.txt`，`wider_face_train.txt`，`wider_face_train_bbx_gt.txt`
  - `python3 train/generate_PNet_data.py` 首先需要生成PNet模型训练所需要的数据
  - `python3 train/train_PNet.py` 开始训练PNet模型
 
