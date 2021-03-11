@@ -1,10 +1,13 @@
 import os
 import pickle
+import sys
 
 import cv2
 import numpy as np
 import paddle
 from tqdm import tqdm
+
+sys.path.append("../")
 
 from models.PNet import PNet
 from models.RNet import RNet

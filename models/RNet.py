@@ -5,9 +5,9 @@ class RNet(nn.Layer):
     def __init__(self):
         super(RNet, self).__init__(name_scope='RNet')
         self.conv1 = nn.Conv2D(in_channels=3, out_channels=28, kernel_size=3, padding="VALID")
-        self.pool1 = nn.Pool2D(pool_size=3, pool_stride=2, pool_type='max')
+        self.pool1 = nn.MaxPool2D(kernel_size=3, stride=2)
         self.conv2 = nn.Conv2D(in_channels=28, out_channels=48, kernel_size=3, padding="VALID")
-        self.pool2 = nn.Pool2D(pool_size=3, pool_stride=2, pool_type='max')
+        self.pool2 = nn.MaxPool2D(kernel_size=3, stride=2)
         self.conv3 = nn.Conv2D(in_channels=48, out_channels=64, kernel_size=2, padding="VALID")
         self.flatten = nn.Flatten()
         self.fc = nn.Linear(in_features=256, out_features=128)

@@ -144,13 +144,13 @@ def combine_data_list(data_dir):
                                                                         len(landmark_keep)))
         # 开始写入列表数据
         for i in pos_keep:
-            f.write(pos[i])
+            f.write(pos[i].replace('\\', '/'))
         for i in neg_keep:
-            f.write(neg[i])
+            f.write(neg[i].replace('\\', '/'))
         for i in part_keep:
-            f.write(part[i])
+            f.write(part[i].replace('\\', '/'))
         for i in landmark_keep:
-            f.write(landmark[i])
+            f.write(landmark[i].replace('\\', '/'))
 
     # 删除原来的数据列表文件
     os.remove(os.path.join(data_dir, 'positive.txt'))

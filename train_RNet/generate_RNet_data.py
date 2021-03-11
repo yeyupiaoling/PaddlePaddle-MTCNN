@@ -1,10 +1,13 @@
 import os
 import pickle
+import sys
 
 import cv2
 import numpy as np
 import paddle
 from tqdm import tqdm
+
+sys.path.append("../")
 
 from models.PNet import PNet
 from utils.data_format_converter import convert_data
@@ -42,7 +45,7 @@ def processed_image(img, scale):
     # 转换成CHW
     image = image.transpose((2, 0, 1))
     # 转换成BGR
-    image = (image[(2, 1, 0), :, :] - 127.5) / 128
+    image = (image - 127.5) / 128
     return image
 
 

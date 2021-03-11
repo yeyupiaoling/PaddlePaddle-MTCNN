@@ -1,8 +1,11 @@
 import os
+import sys
 
 import cv2
 import numpy as np
 from tqdm import tqdm
+
+sys.path.append("../")
 
 from utils.data_format_converter import convert_data
 from utils.utils import IOU, combine_data_list, crop_landmark_image, delete_old_img

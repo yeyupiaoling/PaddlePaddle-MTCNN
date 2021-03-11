@@ -1,8 +1,11 @@
 import os
+import sys
 from datetime import datetime
 
 import paddle
 from paddle.io import DataLoader
+
+sys.path.append("../")
 
 from models.Loss import ClassLoss, BBoxLoss, LandmarkLoss, accuracy
 from models.RNet import RNet

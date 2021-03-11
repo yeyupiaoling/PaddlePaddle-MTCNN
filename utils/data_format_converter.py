@@ -2,7 +2,6 @@ import os
 import struct
 import uuid
 from tqdm import tqdm
-import numpy as np
 import cv2
 
 
@@ -48,23 +47,21 @@ def convert_data(data_folder, output_prefix):
         landmark = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         # 如果只有box，关键点就补0
         if len(sample) == 6:
-            bbox = [float(i) for i in sample[2:]]
+            bbox = [round(float(i), 4) for i in sample[2:]]
         # 如果只有关键点，那么box就补0
         if len(sample) == 12:
-            landmark = [float(i) for i in sample[2:]]
+            landmark = [round(float(i), 4) for i in sample[2:]]
         # 加入到数据列表中
         train_image_list.append((image, label, bbox, landmark))
-    print("train_data size:", len(train_image_list))
+    print("训练数据大小：", len(train_image_list))
 
     # 开始写入数据
     writer = DataSetWriter(output_prefix)
-    for record in tqdm(train_image_list):
+    for image, label, bbox, landmark in tqdm(train_image_list):
         try:
-            image, label, bbox, landmark = record
             key = str(uuid.uuid1())
-            img = open(image, 'rb').read()
-            load_img = cv2.imdecode(np.fromstring(img, dtype=np.uint8), 1)
-            dummy, img = cv2.imencode('.bmp', load_img)
+            img = cv2.imread(image)
+            _, img = cv2.imencode('.bmp', img)
             # 写入对应的数据
             writer.add_img(key, img.tostring())
             label_str = str(label)

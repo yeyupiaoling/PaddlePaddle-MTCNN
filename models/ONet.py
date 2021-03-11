@@ -1,15 +1,15 @@
 import paddle.nn as nn
 
 
-class RNet(nn.Layer):
+class ONet(nn.Layer):
     def __init__(self):
-        super(RNet, self).__init__(name_scope='RNet')
+        super(ONet, self).__init__(name_scope='ONet')
         self.conv1 = nn.Conv2D(in_channels=3, out_channels=32, kernel_size=3, padding="VALID")
-        self.pool1 = nn.Pool2D(pool_size=3, pool_stride=2, pool_type='max')
+        self.pool1 = nn.MaxPool2D(kernel_size=3, stride=2)
         self.conv2 = nn.Conv2D(in_channels=32, out_channels=64, kernel_size=3, padding="VALID")
-        self.pool2 = nn.Pool2D(pool_size=3, pool_stride=2, pool_type='max')
+        self.pool2 = nn.MaxPool2D(kernel_size=3, stride=2)
         self.conv3 = nn.Conv2D(in_channels=64, out_channels=64, kernel_size=2, padding="VALID")
-        self.pool3 = nn.Pool2D(pool_size=2, pool_stride=2, pool_type='max')
+        self.pool3 = nn.MaxPool2D(kernel_size=2, stride=2)
         self.conv4 = nn.Conv2D(in_channels=64, out_channels=128, kernel_size=2, padding="VALID")
         self.flatten = nn.Flatten()
         self.fc = nn.Linear(in_features=512, out_features=256)

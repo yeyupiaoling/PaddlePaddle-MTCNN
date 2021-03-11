@@ -5,13 +5,13 @@ import paddle
 class PNet(nn.Layer):
     def __init__(self):
         super(PNet, self).__init__(name_scope='PNet')
-        self.conv1 = nn.Conv2D(in_channels=3, out_channels=10, kernel_size=3, padding="VALID")
-        self.pool1 = nn.Pool2D(pool_size=2, pool_stride=2, pool_type='max')
-        self.conv2 = nn.Conv2D(in_channels=10, out_channels=16, kernel_size=3, padding="VALID")
-        self.conv3 = nn.Conv2D(in_channels=16, out_channels=32, kernel_size=3, padding="VALID")
-        self.conv4_1 = nn.Conv2D(in_channels=32, out_channels=2, kernel_size=1, padding="VALID")
-        self.conv4_2 = nn.Conv2D(in_channels=32, out_channels=4, kernel_size=1, padding="VALID")
-        self.conv4_3 = nn.Conv2D(in_channels=32, out_channels=10, kernel_size=1, padding="VALID")
+        self.conv1 = nn.Conv2D(in_channels=3, out_channels=10, kernel_size=3)
+        self.pool1 = nn.MaxPool2D(kernel_size=2, stride=2)
+        self.conv2 = nn.Conv2D(in_channels=10, out_channels=16, kernel_size=3)
+        self.conv3 = nn.Conv2D(in_channels=16, out_channels=32, kernel_size=3)
+        self.conv4_1 = nn.Conv2D(in_channels=32, out_channels=2, kernel_size=1)
+        self.conv4_2 = nn.Conv2D(in_channels=32, out_channels=4, kernel_size=1)
+        self.conv4_3 = nn.Conv2D(in_channels=32, out_channels=10, kernel_size=1)
         self.prelu = nn.PReLU()
         self.softmax = nn.Softmax()
 

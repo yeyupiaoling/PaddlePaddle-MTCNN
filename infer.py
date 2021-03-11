@@ -1,60 +1,64 @@
+import argparse
+import os
+
 import cv2
 import numpy as np
-import paddle.fluid as fluid
+import paddle
 
+from models.ONet import ONet
+from models.PNet import PNet
+from models.RNet import RNet
 from utils.utils import generate_bbox, py_nms, convert_to_square, pad, calibrate_box
 
-# 获取执行器
-place = fluid.CUDAPlace(0)
-# place = fluid.CPUPlace()
-pnet_exe = fluid.Executor(place)
-rnet_exe = fluid.Executor(place)
-onet_exe = fluid.Executor(place)
+parser = argparse.ArgumentParser()
+parser.add_argument('--model_path', type=str, help='PNet、RNet、ONet三个模型文件存在的文件夹路径')
+parser.add_argument('--image_path', type=str, help='需要预测图像的路径')
+args = parser.parse_args()
 
-infer_pnet_scope = fluid.core.Scope()
-infer_rnet_scope = fluid.core.Scope()
-infer_onet_scope = fluid.core.Scope()
+# 获取P模型
+pnet = PNet()
+pnet.set_state_dict(paddle.load(os.path.join(args.model_path, 'PNet.pdparams')))
+pnet.eval()
+
+# 获取R模型
+rnet = RNet()
+rnet.set_state_dict(paddle.load(os.path.join(args.model_path, 'RNet.pdparams')))
+rnet.eval()
+
+# 获取R模型
+onet = ONet()
+onet.set_state_dict(paddle.load(os.path.join(args.model_path, 'ONet.pdparams')))
+onet.eval()
 
 
 # 使用PNet模型预测
 def predict_pnet(infer_data):
-    with fluid.scope_guard(infer_pnet_scope):
-        # 从保存的模型文件中获取预测程序、输入数据的名称和输出层
-        [infer_program, feeded_var_names, target_vars] = fluid.io.load_inference_model(dirname='../infer_model/PNet',
-                                                                                       executor=pnet_exe)
-        # 添加待预测的图片
-        infer_data = infer_data[np.newaxis,]
-        # 执行预测
-        cls_prob, bbox_pred, landmark_pred = pnet_exe.run(program=infer_program,
-                                                          feed={feeded_var_names[0]: infer_data},
-                                                          fetch_list=target_vars)
-        return cls_prob, bbox_pred
+    # 添加待预测的图片
+    infer_data = paddle.to_tensor(infer_data, dtype='float32')
+    infer_data = paddle.unsqueeze(infer_data, axis=0)
+    # 执行预测
+    cls_prob, bbox_pred, _ = pnet(infer_data)
+    return cls_prob.numpy(), bbox_pred.numpy()
 
 
-# 使用RNet预测
+# 使用RNet模型预测
 def predict_rnet(infer_data):
-    with fluid.scope_guard(infer_rnet_scope):
-        # 从保存的模型文件中获取预测程序、输入数据的名称和输出层
-        [infer_program, feeded_var_names, target_vars] = fluid.io.load_inference_model(dirname='../infer_model/RNet',
-                                                                                       executor=rnet_exe)
-        # 执行预测
-        cls_prob, bbox_pred, landmark_pred = rnet_exe.run(program=infer_program,
-                                                          feed={feeded_var_names[0]: infer_data},
-                                                          fetch_list=target_vars)
-        return cls_prob, bbox_pred
+    # 添加待预测的图片
+    infer_data = paddle.to_tensor(infer_data, dtype='float32')
+    infer_data = paddle.unsqueeze(infer_data, axis=0)
+    # 执行预测
+    cls_prob, bbox_pred, _ = rnet(infer_data)
+    return cls_prob.numpy(), bbox_pred.numpy()
 
 
 # 使用ONet模型预测
 def predict_onet(infer_data):
-    with fluid.scope_guard(infer_onet_scope):
-        # 从保存的模型文件中获取预测程序、输入数据的名称和输出层
-        [infer_program, feeded_var_names, target_vars] = fluid.io.load_inference_model(dirname='../infer_model/ONet',
-                                                                                       executor=onet_exe)
-        # 执行预测
-        cls_prob, bbox_pred, landmark_pred = onet_exe.run(program=infer_program,
-                                                          feed={feeded_var_names[0]: infer_data},
-                                                          fetch_list=target_vars)
-        return cls_prob, bbox_pred, landmark_pred
+    # 添加待预测的图片
+    infer_data = paddle.to_tensor(infer_data, dtype='float32')
+    infer_data = paddle.unsqueeze(infer_data, axis=0)
+    # 执行预测
+    cls_prob, bbox_pred, landmark_pred = onet(infer_data)
+    return cls_prob.numpy(), bbox_pred.numpy(), landmark_pred.numpy()
 
 
 # 预处理数据，转化图像尺度并对像素归一
@@ -234,10 +238,9 @@ def infer_image(image_path):
 
 
 if __name__ == '__main__':
-    image_path = '222.jpg'
     # 预测图片获取人脸的box和关键点
-    boxes_c, landmarks = infer_image(image_path)
-    img = cv2.imread(image_path)
+    boxes_c, landmarks = infer_image(args.image_path)
+    img = cv2.imread(args.image_path)
     # 把关键画出来
     if boxes_c is not None:
         for i in range(boxes_c.shape[0]):

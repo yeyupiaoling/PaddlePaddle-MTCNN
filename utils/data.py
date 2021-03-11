@@ -53,14 +53,14 @@ class ImageData(object):
 
 def process(image):
     image = np.fromstring(image, dtype=np.uint8)
-    image = cv2.imdecode(image, 1)
+    image = cv2.imdecode(image, cv2.IMREAD_COLOR)
     assert (image is not None), 'image is None'
     # 把图片转换成numpy值
     image = np.array(image).astype(np.float32)
     # 转换成CHW
     image = image.transpose((2, 0, 1))
     # 转换成BGR
-    image = (image[(2, 1, 0), :, :] - 127.5) / 128
+    image = (image - 127.5) / 128
     return image
 
 

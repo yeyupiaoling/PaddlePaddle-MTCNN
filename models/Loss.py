@@ -30,7 +30,7 @@ class BBoxLoss(nn.Layer):
     def __init__(self):
         super(BBoxLoss, self).__init__(name_scope='BBoxLoss')
         self.square_loss = nn.MSELoss(reduction='none')
-        self.keep_ratio = 0.7
+        self.keep_ratio = 1.0
 
     def forward(self, bbox_out, bbox_target, label):
         # 保留pos 1 和part -1 的数据
@@ -51,7 +51,7 @@ class LandmarkLoss(nn.Layer):
     def __init__(self):
         super(LandmarkLoss, self).__init__(name_scope='LandmarkLoss')
         self.square_loss = nn.MSELoss(reduction='none')
-        self.keep_ratio = 0.7
+        self.keep_ratio = 1.0
 
     def forward(self, landmark_out, landmark_target, label):
         # 只保留landmark数据 -2
