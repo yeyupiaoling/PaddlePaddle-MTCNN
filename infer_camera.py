@@ -31,7 +31,7 @@ def predict_pnet(infer_data):
     infer_data = paddle.to_tensor(infer_data, dtype='float32')
     infer_data = paddle.unsqueeze(infer_data, axis=0)
     # 执行预测
-    cls_prob, bbox_pred, _ = pnet(infer_data)
+    cls_prob, bbox_pred = pnet(infer_data)
     cls_prob = paddle.squeeze(cls_prob).transpose((1, 2, 0))
     bbox_pred = paddle.squeeze(bbox_pred).transpose((1, 2, 0))
     return cls_prob.numpy(), bbox_pred.numpy()
@@ -42,7 +42,7 @@ def predict_rnet(infer_data):
     # 添加待预测的图片
     infer_data = paddle.to_tensor(infer_data, dtype='float32')
     # 执行预测
-    cls_prob, bbox_pred, _ = rnet(infer_data)
+    cls_prob, bbox_pred = rnet(infer_data)
     return cls_prob.numpy(), bbox_pred.numpy()
 
 
@@ -50,7 +50,6 @@ def predict_rnet(infer_data):
 def predict_onet(infer_data):
     # 添加待预测的图片
     infer_data = paddle.to_tensor(infer_data, dtype='float32')
-    infer_data = paddle.unsqueeze(infer_data, axis=0)
     # 执行预测
     cls_prob, bbox_pred, landmark_pred = onet(infer_data)
     return cls_prob.numpy(), bbox_pred.numpy(), landmark_pred.numpy()
@@ -185,7 +184,7 @@ def detect_onet(im, dets, thresh):
     landmark[:, 1::2] = (np.tile(h, (5, 1)) * landmark[:, 1::2].T + np.tile(boxes[:, 1], (5, 1)) - 1).T
     boxes_c = calibrate_box(boxes, reg)
 
-    keep = py_nms(boxes_c, 0.6)
+    keep = py_nms(boxes_c, 0.4)
     boxes_c = boxes_c[keep]
     landmark = landmark[keep]
     return boxes_c, landmark
@@ -195,17 +194,14 @@ def detect_onet(im, dets, thresh):
 def infer_image(im):
     # 调用第一个模型预测
     boxes_c = detect_pnet(im, 20, 0.79, 0.6)
-    print(boxes_c.shape)
     if boxes_c is None:
         return None, None
     # 调用第二个模型预测
     boxes_c = detect_rnet(im, boxes_c, 0.7)
-    print(boxes_c.shape)
     if boxes_c is None:
         return None, None
     # 调用第三个模型预测
     boxes_c, landmark = detect_onet(im, boxes_c, 0.7)
-    print(boxes_c.shape)
     if boxes_c is None:
         return None, None
 
@@ -229,8 +225,8 @@ def draw_face(img, boxes_c, landmarks):
     for i in range(landmarks.shape[0]):
         for j in range(len(landmarks[i]) // 2):
             cv2.circle(img, (int(landmarks[i][2 * j]), int(int(landmarks[i][2 * j + 1]))), 2, (0, 0, 255))
-    cv2.imwrite("result.jpg", img)
     cv2.imshow('result', img)
+    cv2.waitKey(1)
 
 
 if __name__ == '__main__':

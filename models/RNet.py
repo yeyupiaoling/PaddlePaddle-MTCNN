@@ -16,7 +16,6 @@ class RNet(nn.Layer):
         self.class_fc = nn.Linear(in_features=128, out_features=2)
         self.softmax = nn.Softmax()
         self.bbox_fc = nn.Linear(in_features=128, out_features=4)
-        self.landmark_fc = nn.Linear(in_features=128, out_features=10)
         self.prelu = nn.PReLU()
 
     def forward(self, x):
@@ -32,6 +31,4 @@ class RNet(nn.Layer):
         class_out = self.softmax(class_out)
         # 人脸box的回归卷积输出层
         bbox_out = self.bbox_fc(x)
-        # 5个关键点的回归卷积输出层
-        landmark_out = self.landmark_fc(x)
-        return class_out, bbox_out, landmark_out
+        return class_out, bbox_out

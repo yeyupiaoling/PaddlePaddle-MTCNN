@@ -27,7 +27,7 @@ def predict(infer_data):
     infer_data = paddle.to_tensor(infer_data, dtype='float32')
     infer_data = paddle.unsqueeze(infer_data, axis=0)
     # 执行预测
-    cls_prob, bbox_pred, _ = pnet(infer_data)
+    cls_prob, bbox_pred = pnet(infer_data)
     cls_prob = paddle.squeeze(cls_prob).transpose((1, 2, 0))
     bbox_pred = paddle.squeeze(bbox_pred).transpose((1, 2, 0))
     return cls_prob.numpy(), bbox_pred.numpy()
