@@ -53,8 +53,8 @@ for epoch in range(epoch_num):
         optimizer.clear_grad()
         if batch_id % 100 == 0:
             acc = accuracy(class_out, label)
-            print('[%s] Train epoch %d, batch %d, loss: %f, accuracy：%f' % (
-                datetime.now(), epoch, batch_id, total_loss, acc))
+            print('[%s] Train epoch %d, batch %d, total_loss: %f, cls_loss: %f, box_loss: %f, landmarks_loss: %f, '
+                  'accuracy：%f' % (datetime.now(), epoch, batch_id, total_loss, cls_loss, box_loss, landmarks_loss, acc))
     scheduler.step()
 
     # 保存模型

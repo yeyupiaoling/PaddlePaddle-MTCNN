@@ -59,7 +59,7 @@ def process(image):
     image = np.array(image).astype(np.float32)
     # 转换成CHW
     image = image.transpose((2, 0, 1))
-    # 转换成BGR
+    # 归一化
     image = (image - 127.5) / 128
     return image
 

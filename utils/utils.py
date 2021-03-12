@@ -57,6 +57,22 @@ class BBox:
         return p
 
 
+# 预处理数据，转化图像尺度并对像素归一
+def processed_image(img, scale):
+    height, width, channels = img.shape
+    new_height = int(height * scale)
+    new_width = int(width * scale)
+    new_dim = (new_width, new_height)
+    img_resized = cv2.resize(img, new_dim, interpolation=cv2.INTER_LINEAR)
+    # 把图片转换成numpy值
+    image = np.array(img_resized).astype(np.float32)
+    # 转换成CHW
+    image = image.transpose((2, 0, 1))
+    # 归一化
+    image = (image - 127.5) / 128
+    return image
+
+
 def IOU(box, boxes):
     """裁剪的box和图片所有人脸box的iou值
     参数：
@@ -132,7 +148,7 @@ def combine_data_list(data_dir):
     with open(os.path.join(data_dir, 'landmark.txt'), 'r') as f:
         landmark = f.readlines()
     with open(os.path.join(data_dir, 'all_data_list.txt'), 'w') as f:
-        base_num = 250000 if len(pos) > 250000 else 1000
+        base_num = 250000 if len(pos) > 250000 else len(pos) // 1000 * 1000
         print('整理前的数据：neg数量：{} pos数量：{} part数量:{} landmark: {} 基数:{}'.format(len(neg), len(pos), len(part), len(landmark), base_num))
         # 打乱写入的数据顺序，并这里这里设置比例，设置size参数的比例就能得到数据集比例, 论文比例为：3:1:1:2
         neg_keep = npr.choice(len(neg), size=base_num * 3, replace=base_num * 3 > len(neg))
