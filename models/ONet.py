@@ -12,7 +12,7 @@ class ONet(nn.Layer):
         self.pool3 = nn.MaxPool2D(kernel_size=2, stride=2)
         self.conv4 = nn.Conv2D(in_channels=64, out_channels=128, kernel_size=2, padding="VALID")
         self.flatten = nn.Flatten()
-        self.fc = nn.Linear(in_features=512, out_features=256)
+        self.fc = nn.Linear(in_features=1152, out_features=256)
         self.class_fc = nn.Linear(in_features=256, out_features=2)
         self.softmax = nn.Softmax()
         self.bbox_fc = nn.Linear(in_features=256, out_features=4)

@@ -5,29 +5,23 @@ import cv2
 import numpy as np
 import paddle
 
-from models.ONet import ONet
-from models.PNet import PNet
-from models.RNet import RNet
-from utils.utils import generate_bbox, py_nms, convert_to_square, pad, calibrate_box
+from utils.utils import generate_bbox, py_nms, convert_to_square
+from utils.utils import pad, calibrate_box, processed_image
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model_path', type=str, help='PNet、RNet、ONet三个模型文件存在的文件夹路径')
-parser.add_argument('--image_path', type=str, help='需要预测图像的路径')
+parser.add_argument('--model_path', type=str, default='infer_models',      help='PNet、RNet、ONet三个模型文件存在的文件夹路径')
 args = parser.parse_args()
 
 # 获取P模型
-pnet = PNet()
-pnet.set_state_dict(paddle.load(os.path.join(args.model_path, 'PNet.pdparams')))
+pnet = paddle.jit.load(os.path.join(args.model_path, 'PNet'))
 pnet.eval()
 
 # 获取R模型
-rnet = RNet()
-rnet.set_state_dict(paddle.load(os.path.join(args.model_path, 'RNet.pdparams')))
+rnet = paddle.jit.load(os.path.join(args.model_path, 'RNet'))
 rnet.eval()
 
 # 获取R模型
-onet = ONet()
-onet.set_state_dict(paddle.load(os.path.join(args.model_path, 'ONet.pdparams')))
+onet = paddle.jit.load(os.path.join(args.model_path, 'ONet'))
 onet.eval()
 
 
@@ -38,6 +32,8 @@ def predict_pnet(infer_data):
     infer_data = paddle.unsqueeze(infer_data, axis=0)
     # 执行预测
     cls_prob, bbox_pred, _ = pnet(infer_data)
+    cls_prob = paddle.squeeze(cls_prob).transpose((1, 2, 0))
+    bbox_pred = paddle.squeeze(bbox_pred).transpose((1, 2, 0))
     return cls_prob.numpy(), bbox_pred.numpy()
 
 
@@ -45,7 +41,6 @@ def predict_pnet(infer_data):
 def predict_rnet(infer_data):
     # 添加待预测的图片
     infer_data = paddle.to_tensor(infer_data, dtype='float32')
-    infer_data = paddle.unsqueeze(infer_data, axis=0)
     # 执行预测
     cls_prob, bbox_pred, _ = rnet(infer_data)
     return cls_prob.numpy(), bbox_pred.numpy()
@@ -59,22 +54,6 @@ def predict_onet(infer_data):
     # 执行预测
     cls_prob, bbox_pred, landmark_pred = onet(infer_data)
     return cls_prob.numpy(), bbox_pred.numpy(), landmark_pred.numpy()
-
-
-# 预处理数据，转化图像尺度并对像素归一
-def processed_image(img, scale):
-    height, width, channels = img.shape
-    new_height = int(height * scale)
-    new_width = int(width * scale)
-    new_dim = (new_width, new_height)
-    img_resized = cv2.resize(img, new_dim, interpolation=cv2.INTER_LINEAR)
-    # 把图片转换成numpy值
-    image = np.array(img_resized).astype(np.float32)
-    # 转换成CHW
-    image = image.transpose((2, 0, 1))
-    # 转换成BGR
-    image = (image[(2, 1, 0), :, :] - 127.5) / 128
-    return image
 
 
 # 获取PNet网络输出结果
@@ -93,12 +72,10 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
     while min(current_height, current_width) > net_size:
         # 类别和box
         cls_cls_map, reg = predict_pnet(im_resized)
-        cls_cls_map = cls_cls_map.transpose((1, 2, 0))
-        reg = reg.transpose((1, 2, 0))
         boxes = generate_bbox(cls_cls_map[:, :, 1], reg, current_scale, thresh)
         current_scale *= scale_factor  # 继续缩小图像做金字塔
         im_resized = processed_image(im, current_scale)
-        current_height, current_width, _ = im_resized.shape
+        _, current_height, current_width = im_resized.shape
 
         if boxes.size == 0:
             continue
@@ -107,12 +84,11 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
         boxes = boxes[keep]
         all_boxes.append(boxes)
     if len(all_boxes) == 0:
-        return None, None, None
+        return None
     all_boxes = np.vstack(all_boxes)
     # 将金字塔之后的box也进行非极大值抑制
     keep = py_nms(all_boxes[:, 0:5], 0.7)
     all_boxes = all_boxes[keep]
-    boxes = all_boxes[:, :5]
     # box的长宽
     bbw = all_boxes[:, 2] - all_boxes[:, 0] + 1
     bbh = all_boxes[:, 3] - all_boxes[:, 1] + 1
@@ -147,7 +123,7 @@ def detect_rnet(im, dets, thresh):
     zeros = np.zeros_like(tmpw)
     num_boxes = np.sum(np.where((np.minimum(tmpw, tmph) >= delete_size), ones, zeros))
     cropped_ims = np.zeros((num_boxes, 24, 24, 3), dtype=np.float32)
-    for i in range(num_boxes):
+    for i in range(int(num_boxes)):
         # 将pnet生成的box相对与原图进行裁剪，超出部分用0补
         if tmph[i] < 20 or tmpw[i] < 20:
             continue
@@ -216,8 +192,7 @@ def detect_onet(im, dets, thresh):
 
 
 # 预测图片
-def infer_image(image_path):
-    im = cv2.imread(image_path)
+def infer_image(im):
     # 调用第一个模型预测
     boxes_c = detect_pnet(im, 20, 0.79, 0.6)
     print(boxes_c.shape)
@@ -237,27 +212,34 @@ def infer_image(image_path):
     return boxes_c, landmark
 
 
+# 画出人脸框和关键点
+def draw_face(img, boxes_c, landmarks):
+    for i in range(boxes_c.shape[0]):
+        bbox = boxes_c[i, :4]
+        score = boxes_c[i, 4]
+        corpbbox = [int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]
+        # 画人脸框
+        cv2.rectangle(img, (corpbbox[0], corpbbox[1]),
+                      (corpbbox[2], corpbbox[3]), (255, 0, 0), 1)
+        # 判别为人脸的置信度
+        cv2.putText(img, '{:.2f}'.format(score),
+                    (corpbbox[0], corpbbox[1] - 2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    # 画关键点
+    for i in range(landmarks.shape[0]):
+        for j in range(len(landmarks[i]) // 2):
+            cv2.circle(img, (int(landmarks[i][2 * j]), int(int(landmarks[i][2 * j + 1]))), 2, (0, 0, 255))
+    cv2.imwrite("result.jpg", img)
+    cv2.imshow('result', img)
+
+
 if __name__ == '__main__':
-    # 预测图片获取人脸的box和关键点
-    boxes_c, landmarks = infer_image(args.image_path)
-    img = cv2.imread(args.image_path)
-    # 把关键画出来
-    if boxes_c is not None:
-        for i in range(boxes_c.shape[0]):
-            bbox = boxes_c[i, :4]
-            score = boxes_c[i, 4]
-            corpbbox = [int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])]
-            # 画人脸框
-            cv2.rectangle(img, (corpbbox[0], corpbbox[1]),
-                          (corpbbox[2], corpbbox[3]), (255, 0, 0), 1)
-            # 判别为人脸的置信度
-            cv2.putText(img, '{:.2f}'.format(score),
-                        (corpbbox[0], corpbbox[1] - 2),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-        # 画关键点
-        for i in range(landmarks.shape[0]):
-            for j in range(len(landmarks[i]) // 2):
-                cv2.circle(img, (int(landmarks[i][2 * j]), int(int(landmarks[i][2 * j + 1]))), 2, (0, 0, 255))
-        cv2.imwrite("result.jpg", img)
-    else:
-        print('image not have face')
+    cap = cv2.VideoCapture(0)
+    while True:
+        ret, img = cap.read()
+        if ret:
+            # 预测图片获取人脸的box和关键点
+            boxes_c, landmarks = infer_image(img)
+            # 把关键画出来
+            if boxes_c is not None:
+                draw_face(img=img, boxes_c=boxes_c, landmarks=landmarks)

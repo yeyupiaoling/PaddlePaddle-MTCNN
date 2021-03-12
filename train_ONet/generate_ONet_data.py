@@ -9,8 +9,6 @@ from tqdm import tqdm
 
 sys.path.append("../")
 
-from models.PNet import PNet
-from models.RNet import RNet
 from utils.data_format_converter import convert_data
 from utils.utils import py_nms, combine_data_list, crop_landmark_image, delete_old_img, pad, processed_image
 from utils.utils import save_hard_example, generate_bbox, read_annotation, convert_to_square, calibrate_box
@@ -19,13 +17,11 @@ from utils.utils import save_hard_example, generate_bbox, read_annotation, conve
 model_path = '../infer_models'
 
 # 获取P模型
-pnet = PNet()
-pnet.set_state_dict(paddle.load(os.path.join(model_path, 'PNet.pdparams')))
+pnet = paddle.jit.load(os.path.join(model_path, 'PNet'))
 pnet.eval()
 
 # 获取R模型
-rnet = RNet()
-rnet.set_state_dict(paddle.load(os.path.join(model_path, 'RNet.pdparams')))
+rnet = paddle.jit.load(os.path.join(model_path, 'RNet'))
 rnet.eval()
 
 
@@ -77,7 +73,7 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
         boxes = boxes[keep]
         all_boxes.append(boxes)
     if len(all_boxes) == 0:
-        return None, None, None
+        return None
     all_boxes = np.vstack(all_boxes)
     # 将金字塔之后的box也进行非极大值抑制
     keep = py_nms(all_boxes[:, 0:5], 0.7)
@@ -94,7 +90,7 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
                          all_boxes[:, 4]])
     boxes_c = boxes_c.T
 
-    return boxes, boxes_c
+    return boxes_c
 
 
 def detect_rnet(im, dets, thresh):
@@ -135,13 +131,13 @@ def detect_rnet(im, dets, thresh):
         boxes[:, 4] = cls_scores[keep_inds]
         reg = reg[keep_inds]
     else:
-        return None, None, None
+        return None, None
 
     keep = py_nms(boxes, 0.6)
     boxes = boxes[keep]
     # 对pnet截取的图像的坐标进行校准，生成rnet的人脸框对于原图的绝对坐标
     boxes_c = calibrate_box(boxes, reg[keep])
-    return boxes, boxes_c, None
+    return boxes, boxes_c
 
 
 # 截取pos,neg,part三种类型图片并resize成24x24大小作为RNet的输入
@@ -173,13 +169,13 @@ def crop_48_box_image(data_path, filename, min_face_size, scale_factor, p_thresh
     for image_path in tqdm(data['images']):
         assert os.path.exists(image_path), 'image not exists'
         im = cv2.imread(image_path)
-        boxes, boxes_c = detect_pnet(im, min_face_size, scale_factor, p_thresh)
+        boxes_c = detect_pnet(im, min_face_size, scale_factor, p_thresh)
         if boxes_c is None:
             all_boxes.append(empty_array)
             landmarks.append(empty_array)
             continue
 
-        boxes, boxes_c, _ = detect_rnet(im, boxes_c, r_thresh)
+        boxes, boxes_c = detect_rnet(im, boxes_c, r_thresh)
         if boxes_c is None:
             all_boxes.append(empty_array)
             landmarks.append(empty_array)

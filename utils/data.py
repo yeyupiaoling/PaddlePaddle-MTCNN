@@ -64,7 +64,7 @@ def process(image):
     return image
 
 
-# 音频数据加载器
+# 数据加载器
 class CustomDataset(Dataset):
     def __init__(self, data_path):
         super(CustomDataset, self).__init__()

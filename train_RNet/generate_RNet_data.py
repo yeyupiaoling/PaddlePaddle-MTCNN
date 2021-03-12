@@ -9,7 +9,6 @@ from tqdm import tqdm
 
 sys.path.append("../")
 
-from models.PNet import PNet
 from utils.data_format_converter import convert_data
 from utils.utils import py_nms, combine_data_list, crop_landmark_image, delete_old_img
 from utils.utils import save_hard_example, generate_bbox, read_annotation, processed_image
@@ -18,8 +17,7 @@ from utils.utils import save_hard_example, generate_bbox, read_annotation, proce
 model_path = '../infer_models'
 
 # 获取P模型
-pnet = PNet()
-pnet.set_state_dict(paddle.load(os.path.join(model_path, 'PNet.pdparams')))
+pnet = paddle.jit.load(os.path.join(model_path, 'PNet'))
 pnet.eval()
 
 
@@ -62,12 +60,11 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
         boxes = boxes[keep]
         all_boxes.append(boxes)
     if len(all_boxes) == 0:
-        return None, None, None
+        return None
     all_boxes = np.vstack(all_boxes)
     # 将金字塔之后的box也进行非极大值抑制
     keep = py_nms(all_boxes[:, 0:5], 0.7)
     all_boxes = all_boxes[keep]
-    boxes = all_boxes[:, :5]
     # box的长宽
     bbw = all_boxes[:, 2] - all_boxes[:, 0] + 1
     bbh = all_boxes[:, 3] - all_boxes[:, 1] + 1
@@ -79,7 +76,7 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
                          all_boxes[:, 4]])
     boxes_c = boxes_c.T
 
-    return boxes, boxes_c
+    return boxes_c
 
 
 # 截取pos,neg,part三种类型图片并resize成24x24大小作为RNet的输入
@@ -111,7 +108,7 @@ def crop_24_box_image(data_path, filename, min_face_size, scale_factor, thresh):
     for image_path in tqdm(data['images']):
         assert os.path.exists(image_path), 'image not exists'
         im = cv2.imread(image_path)
-        boxes, boxes_c = detect_pnet(im, min_face_size, scale_factor, thresh)
+        boxes_c = detect_pnet(im, min_face_size, scale_factor, thresh)
         if boxes_c is None:
             all_boxes.append(empty_array)
             landmarks.append(empty_array)

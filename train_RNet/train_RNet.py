@@ -3,6 +3,7 @@ import sys
 from datetime import datetime
 
 import paddle
+from paddle.static import InputSpec
 from paddle.io import DataLoader
 
 sys.path.append("../")
@@ -60,4 +61,6 @@ for epoch in range(epoch_num):
     # 保存模型
     if not os.path.exists(model_path):
         os.makedirs(model_path)
-    paddle.save(model.state_dict(), os.path.join(model_path, 'RNet.pdparams'))
+    paddle.jit.save(layer=model,
+                    path=os.path.join(model_path, 'RNet'),
+                    input_spec=[InputSpec(shape=[None, 3, 24, 24], dtype='float32')])

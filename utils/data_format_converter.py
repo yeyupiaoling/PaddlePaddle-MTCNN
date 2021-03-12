@@ -47,10 +47,10 @@ def convert_data(data_folder, output_prefix):
         landmark = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         # 如果只有box，关键点就补0
         if len(sample) == 6:
-            bbox = [round(float(i), 4) for i in sample[2:]]
+            bbox = [float(i) for i in sample[2:]]
         # 如果只有关键点，那么box就补0
         if len(sample) == 12:
-            landmark = [round(float(i), 4) for i in sample[2:]]
+            landmark = [float(i) for i in sample[2:]]
         # 加入到数据列表中
         train_image_list.append((image, label, bbox, landmark))
     print("训练数据大小：", len(train_image_list))

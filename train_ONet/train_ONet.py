@@ -3,12 +3,13 @@ import sys
 from datetime import datetime
 
 import paddle
+from paddle.static import InputSpec
 from paddle.io import DataLoader
 
 sys.path.append("../")
 
 from models.Loss import ClassLoss, BBoxLoss, LandmarkLoss, accuracy
-from models.RNet import RNet
+from models.ONet import ONet
 from utils.data import CustomDataset
 
 # 设置损失值的比例
@@ -28,7 +29,7 @@ train_dataset = CustomDataset(data_path)
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
 
 # 获取P模型
-model = RNet()
+model = ONet()
 
 # 设置优化方法
 scheduler = paddle.optimizer.lr.PiecewiseDecay(boundaries=[6, 14, 20], values=[0.001, 0.0001, 0.00001, 0.000001],
@@ -53,11 +54,13 @@ for epoch in range(epoch_num):
         optimizer.clear_grad()
         if batch_id % 100 == 0:
             acc = accuracy(class_out, label)
-            print('[%s] Train epoch %d, batch %d, loss: %f, accuracy：%f' % (
-                datetime.now(), epoch, batch_id, total_loss, acc))
+            print('[%s] Train epoch %d, batch %d, total_loss: %f, cls_loss: %f, box_loss: %f, landmarks_loss: %f, '
+                  'accuracy：%f' % (datetime.now(), epoch, batch_id, total_loss, cls_loss, box_loss, landmarks_loss, acc))
     scheduler.step()
 
     # 保存模型
     if not os.path.exists(model_path):
         os.makedirs(model_path)
-    paddle.save(model.state_dict(), os.path.join(model_path, 'ONet.pdparams'))
+    paddle.jit.save(layer=model,
+                    path=os.path.join(model_path, 'ONet'),
+                    input_spec=[InputSpec(shape=[None, 3, 48, 48], dtype='float32')])

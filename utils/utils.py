@@ -593,7 +593,9 @@ def save_hard_example(data_path, save_size):
     d_idx = 0
 
     # 开始裁剪下一个网络的训练图片
-    for im_idx, dets, gts in tqdm(zip(im_idx_list, det_boxes, gt_boxes_list)):
+    pbar = tqdm(total=len(im_idx_list))
+    for im_idx, dets, gts in zip(im_idx_list, det_boxes, gt_boxes_list):
+        pbar.update(10)
         # 把原标注数据集以4个数据作为一个box进行变形
         gts = np.array(gts, dtype=np.float32).reshape(-1, 4)
 
@@ -665,6 +667,7 @@ def save_hard_example(data_path, save_size):
                         save_file + ' -1 %.2f %.2f %.2f %.2f\n' % (offset_x1, offset_y1, offset_x2, offset_y2))
                     cv2.imwrite(save_file, resized_im)
                     d_idx += 1
+    pbar.close()
     neg_file.close()
     part_file.close()
     pos_file.close()
