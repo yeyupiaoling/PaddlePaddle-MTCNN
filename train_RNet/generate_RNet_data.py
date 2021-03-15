@@ -56,7 +56,7 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
         if boxes.size == 0:
             continue
         # 非极大值抑制留下重复低的box
-        keep = py_nms(boxes[:, :5], 0.5)
+        keep = py_nms(boxes[:, :5], 0.7, mode='Union')
         boxes = boxes[keep]
         all_boxes.append(boxes)
     if len(all_boxes) == 0:

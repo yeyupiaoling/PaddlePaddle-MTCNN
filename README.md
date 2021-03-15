@@ -2,19 +2,17 @@
 基于PaddlePaddle复现的MTCNN人脸检测模型
 
 
-## train目录
- - `train/config.py` 训练和模型配置参数
- - `train/data_format_converter.py` 把大量的图片合并成一个文件
- - `train/generate_ONet_data.py` 生成ONet训练的数据
- - `train/generate_PNet_data.py` 生成PNet训练的数据
- - `train/generate_RNet_data.py` 生成RNet训练的数据
- - `train/infer.py` 预测图像程序，检测图片上人脸的位置和关键的位置
- - `train/model.py` 三个模型的定义、损失函数、优化方法的定义
- - `train/myreader.py` 读取已经合并数目的reader
- - `train/train_ONet.py` 训练ONet网络模型
- - `train/train_PNet.py` 训练PNet网络模型
- - `train/train_RNet.py` 训练RNet网络模型
- - `train/utils.py` 所用到的工具类
+## 文件介绍
+- `utils/data_format_converter.py` 把大量的图片合并成一个文件
+- `utils/data.py` 训练数据读取器
+- `utils/utils.py` 所用到的工具类
+- `train_ONet/generate_ONet_data.py` 生成ONet训练的数据
+- `train_PNet/generate_PNet_data.py` 生成PNet训练的数据
+- `train_RNet/generate_RNet_data.py` 生成RNet训练的数据
+- `infer.py` 预测图像程序，检测图片上人脸的位置和关键的位置
+- `train_ONet/train_ONet.py` 训练ONet网络模型
+- `train_PNet/train_PNet.py` 训练PNet网络模型
+- `train_RNet/train_RNet.py` 训练RNet网络模型
  
  
 ## 其他目录

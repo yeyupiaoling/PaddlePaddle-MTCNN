@@ -10,7 +10,7 @@ from utils.utils import pad, calibrate_box, processed_image
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_path', type=str, default='infer_models',      help='PNet、RNet、ONet三个模型文件存在的文件夹路径')
-parser.add_argument('--image_path', type=str, default='dataset/lfw_5590/Abba_Eban_0001.jpg',  help='需要预测图像的路径')
+parser.add_argument('--image_path', type=str, default='dataset/test.jpg',  help='需要预测图像的路径')
 args = parser.parse_args()
 
 # 获取P模型
@@ -80,14 +80,14 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
         if boxes.size == 0:
             continue
         # 非极大值抑制留下重复低的box
-        keep = py_nms(boxes[:, :5], 0.5)
+        keep = py_nms(boxes[:, :5], 0.5, mode='Union')
         boxes = boxes[keep]
         all_boxes.append(boxes)
     if len(all_boxes) == 0:
         return None
     all_boxes = np.vstack(all_boxes)
     # 将金字塔之后的box也进行非极大值抑制
-    keep = py_nms(all_boxes[:, 0:5], 0.7)
+    keep = py_nms(all_boxes[:, 0:5], 0.7, mode='Union')
     all_boxes = all_boxes[keep]
     # box的长宽
     bbw = all_boxes[:, 2] - all_boxes[:, 0] + 1
@@ -146,7 +146,7 @@ def detect_rnet(im, dets, thresh):
     else:
         return None
 
-    keep = py_nms(boxes, 0.6)
+    keep = py_nms(boxes, 0.6, mode='Union')
     boxes = boxes[keep]
     # 对pnet截取的图像的坐标进行校准，生成rnet的人脸框对于原图的绝对坐标
     boxes_c = calibrate_box(boxes, reg[keep])
@@ -188,7 +188,7 @@ def detect_onet(im, dets, thresh):
     landmark[:, 1::2] = (np.tile(h, (5, 1)) * landmark[:, 1::2].T + np.tile(boxes[:, 1], (5, 1)) - 1).T
     boxes_c = calibrate_box(boxes, reg)
 
-    keep = py_nms(boxes_c, 0.1)
+    keep = py_nms(boxes_c, 0.6, mode='Minimum')
     boxes_c = boxes_c[keep]
     landmark = landmark[keep]
     return boxes_c, landmark
@@ -198,13 +198,11 @@ def detect_onet(im, dets, thresh):
 def infer_image(image_path):
     im = cv2.imread(image_path)
     # 调用第一个模型预测
-    boxes_c = detect_pnet(im, 20, 0.79, 0.6)
-    np.save('data_pnet', boxes_c)
+    boxes_c = detect_pnet(im, 20, 0.79, 0.9)
     if boxes_c is None:
         return None, None
     # 调用第二个模型预测
-    boxes_c = detect_rnet(im, boxes_c, 0.7)
-    np.save('data_rnet', boxes_c)
+    boxes_c = detect_rnet(im, boxes_c, 0.6)
     if boxes_c is None:
         return None, None
     # 调用第三个模型预测

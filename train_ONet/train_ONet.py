@@ -21,7 +21,7 @@ radio_landmark_loss = 1.0
 data_path = '../dataset/48/all_data'
 batch_size = 384
 learning_rate = 1e-3
-epoch_num = 14
+epoch_num = 22
 model_path = '../infer_models'
 
 # 获取数据
@@ -34,7 +34,10 @@ model = ONet()
 # 设置优化方法
 scheduler = paddle.optimizer.lr.PiecewiseDecay(boundaries=[6, 14, 20], values=[0.001, 0.0001, 0.00001, 0.000001],
                                                verbose=True)
-optimizer = paddle.optimizer.Momentum(parameters=model.parameters(), learning_rate=scheduler)
+optimizer = paddle.optimizer.Momentum(parameters=model.parameters(),
+                                      learning_rate=scheduler,
+                                      momentum=0.9,
+                                      weight_decay=paddle.regularizer.L2Decay(1e-4))
 
 # 获取损失函数
 class_loss = ClassLoss()

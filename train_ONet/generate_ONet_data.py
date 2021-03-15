@@ -69,14 +69,14 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
         if boxes.size == 0:
             continue
         # 非极大值抑制留下重复低的box
-        keep = py_nms(boxes[:, :5], 0.5)
+        keep = py_nms(boxes[:, :5], 0.5, mode='Union')
         boxes = boxes[keep]
         all_boxes.append(boxes)
     if len(all_boxes) == 0:
         return None
     all_boxes = np.vstack(all_boxes)
     # 将金字塔之后的box也进行非极大值抑制
-    keep = py_nms(all_boxes[:, 0:5], 0.7)
+    keep = py_nms(all_boxes[:, 0:5], 0.7, mode='Union')
     all_boxes = all_boxes[keep]
     # box的长宽
     bbw = all_boxes[:, 2] - all_boxes[:, 0] + 1
@@ -134,7 +134,7 @@ def detect_rnet(im, dets, thresh):
     else:
         return None, None
 
-    keep = py_nms(boxes, 0.6)
+    keep = py_nms(boxes, 0.6, mode='Union')
     boxes = boxes[keep]
     # 对pnet截取的图像的坐标进行校准，生成rnet的人脸框对于原图的绝对坐标
     boxes_c = calibrate_box(boxes, reg[keep])

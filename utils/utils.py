@@ -473,8 +473,15 @@ def calibrate_box(bbox, reg):
     return bbox_c
 
 
-def py_nms(dets, thresh):
-    """剔除太相似的box"""
+def py_nms(dets, thresh, mode="Union"):
+    """
+    贪婪策略选择人脸框
+    keep boxes overlap <= thresh
+    rule out overlap > thresh
+    :param dets: [[x1, y1, x2, y2 score]]
+    :param thresh: retain overlap <= thresh
+    :return: indexes to keep
+    """
     x1 = dets[:, 0]
     y1 = dets[:, 1]
     x2 = dets[:, 2]
@@ -497,9 +504,10 @@ def py_nms(dets, thresh):
         w = np.maximum(0.0, xx2 - xx1 + 1)
         h = np.maximum(0.0, yy2 - yy1 + 1)
         inter = w * h
-
-        ovr = inter / (areas[i] + areas[order[1:]] - inter + 1e-10)
-
+        if mode == "Union":
+            ovr = inter / (areas[i] + areas[order[1:]] - inter)
+        elif mode == "Minimum":
+            ovr = inter / np.minimum(areas[i], areas[order[1:]])
         # 保留小于阈值的下标，因为order[0]拿出来做比较了，所以inds+1是原来对应的下标
         inds = np.where(ovr <= thresh)[0]
         order = order[inds + 1]

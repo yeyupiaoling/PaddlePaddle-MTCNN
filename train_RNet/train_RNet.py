@@ -33,7 +33,10 @@ model = RNet()
 # 设置优化方法
 scheduler = paddle.optimizer.lr.PiecewiseDecay(boundaries=[6, 14, 20], values=[0.001, 0.0001, 0.00001, 0.000001],
                                                verbose=True)
-optimizer = paddle.optimizer.Momentum(parameters=model.parameters(), learning_rate=scheduler)
+optimizer = paddle.optimizer.Momentum(parameters=model.parameters(),
+                                      learning_rate=scheduler,
+                                      momentum=0.9,
+                                      weight_decay=paddle.regularizer.L2Decay(1e-4))
 
 # 获取损失函数
 class_loss = ClassLoss()
