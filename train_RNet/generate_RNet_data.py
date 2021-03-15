@@ -28,8 +28,8 @@ def predict(infer_data):
     infer_data = paddle.unsqueeze(infer_data, axis=0)
     # 执行预测
     cls_prob, bbox_pred = pnet(infer_data)
-    cls_prob = paddle.squeeze(cls_prob).transpose((1, 2, 0))
-    bbox_pred = paddle.squeeze(bbox_pred).transpose((1, 2, 0))
+    cls_prob = paddle.squeeze(cls_prob)
+    bbox_pred = paddle.squeeze(bbox_pred)
     return cls_prob.numpy(), bbox_pred.numpy()
 
 
@@ -48,7 +48,7 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
     while min(current_height, current_width) > net_size:
         # 类别和box
         cls_cls_map, reg = predict(im_resized)
-        boxes = generate_bbox(cls_cls_map[:, :, 1], reg, current_scale, thresh)
+        boxes = generate_bbox(cls_cls_map[1, :, :], reg, current_scale, thresh)
         current_scale *= scale_factor  # 继续缩小图像做金字塔
         im_resized = processed_image(im, current_scale)
         _, current_height, current_width = im_resized.shape

@@ -523,7 +523,7 @@ def generate_bbox(cls_map, reg, scale, threshold):
     if t_index[0].size == 0:
         return np.array([])
     # 偏移量
-    dx1, dy1, dx2, dy2 = [reg[t_index[0], t_index[1], i] for i in range(4)]
+    dx1, dy1, dx2, dy2 = [reg[i, t_index[0], t_index[1]] for i in range(4)]
 
     reg = np.array([dx1, dy1, dx2, dy2])
     score = cls_map[t_index[0], t_index[1]]

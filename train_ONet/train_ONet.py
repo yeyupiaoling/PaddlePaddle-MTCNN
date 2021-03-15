@@ -21,7 +21,7 @@ radio_landmark_loss = 1.0
 data_path = '../dataset/48/all_data'
 batch_size = 384
 learning_rate = 1e-3
-epoch_num = 30
+epoch_num = 14
 model_path = '../infer_models'
 
 # 获取数据

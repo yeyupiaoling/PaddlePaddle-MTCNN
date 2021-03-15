@@ -20,7 +20,7 @@ radio_bbox_loss = 0.5
 data_path = '../dataset/24/all_data'
 batch_size = 384
 learning_rate = 1e-3
-epoch_num = 30
+epoch_num = 22
 model_path = '../infer_models'
 
 # 获取数据

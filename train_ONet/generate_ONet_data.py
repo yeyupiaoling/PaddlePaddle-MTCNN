@@ -32,8 +32,8 @@ def predict_pnet(infer_data):
     infer_data = paddle.unsqueeze(infer_data, axis=0)
     # 执行预测
     cls_prob, bbox_pred = pnet(infer_data)
-    cls_prob = paddle.squeeze(cls_prob).transpose((1, 2, 0))
-    bbox_pred = paddle.squeeze(bbox_pred).transpose((1, 2, 0))
+    cls_prob = paddle.squeeze(cls_prob)
+    bbox_pred = paddle.squeeze(bbox_pred)
     return cls_prob.numpy(), bbox_pred.numpy()
 
 
@@ -61,7 +61,7 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
     while min(current_height, current_width) > net_size:
         # 类别和box
         cls_cls_map, reg = predict_pnet(im_resized)
-        boxes = generate_bbox(cls_cls_map[:, :, 1], reg, current_scale, thresh)
+        boxes = generate_bbox(cls_cls_map[1, :, :], reg, current_scale, thresh)
         current_scale *= scale_factor  # 继续缩小图像做金字塔
         im_resized = processed_image(im, current_scale)
         _, current_height, current_width = im_resized.shape
@@ -78,7 +78,6 @@ def detect_pnet(im, min_face_size, scale_factor, thresh):
     # 将金字塔之后的box也进行非极大值抑制
     keep = py_nms(all_boxes[:, 0:5], 0.7)
     all_boxes = all_boxes[keep]
-    boxes = all_boxes[:, :5]
     # box的长宽
     bbw = all_boxes[:, 2] - all_boxes[:, 0] + 1
     bbh = all_boxes[:, 3] - all_boxes[:, 1] + 1
@@ -111,7 +110,7 @@ def detect_rnet(im, dets, thresh):
     ones = np.ones_like(tmpw)
     zeros = np.zeros_like(tmpw)
     num_boxes = np.sum(np.where((np.minimum(tmpw, tmph) >= delete_size), ones, zeros))
-    cropped_ims = np.zeros((num_boxes, 24, 24, 3), dtype=np.float32)
+    cropped_ims = np.zeros((num_boxes, 3, 24, 24), dtype=np.float32)
     for i in range(int(num_boxes)):
         # 将pnet生成的box相对与原图进行裁剪，超出部分用0补
         if tmph[i] < 20 or tmpw[i] < 20:
@@ -119,10 +118,12 @@ def detect_rnet(im, dets, thresh):
         tmp = np.zeros((tmph[i], tmpw[i], 3), dtype=np.uint8)
         try:
             tmp[dy[i]:edy[i] + 1, dx[i]:edx[i] + 1, :] = im[y[i]:ey[i] + 1, x[i]:ex[i] + 1, :]
-            cropped_ims[i, :, :, :] = (cv2.resize(tmp, (24, 24)) - 127.5) / 128
+            img = cv2.resize(tmp, (24, 24))
+            img = img.transpose((2, 0, 1))
+            img = (img - 127.5) / 128
+            cropped_ims[i, :, :, :] = img
         except:
             continue
-    cropped_ims = cropped_ims.transpose((0, 3, 1, 2))
     cls_scores, reg = predict_rnet(cropped_ims)
     cls_scores = cls_scores[:, 1]
     keep_inds = np.where(cls_scores > thresh)[0]
