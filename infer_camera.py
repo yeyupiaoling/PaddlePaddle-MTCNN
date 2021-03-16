@@ -243,3 +243,6 @@ if __name__ == '__main__':
             # 把关键画出来
             if boxes_c is not None:
                 draw_face(img=img, boxes_c=boxes_c, landmarks=landmarks)
+            else:
+                cv2.imshow('result', img)
+                cv2.waitKey(1)
