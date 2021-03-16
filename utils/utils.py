@@ -603,7 +603,7 @@ def save_hard_example(data_path, save_size):
     # 开始裁剪下一个网络的训练图片
     pbar = tqdm(total=len(im_idx_list))
     for im_idx, dets, gts in zip(im_idx_list, det_boxes, gt_boxes_list):
-        pbar.update(10)
+        pbar.update(1)
         # 把原标注数据集以4个数据作为一个box进行变形
         gts = np.array(gts, dtype=np.float32).reshape(-1, 4)
 

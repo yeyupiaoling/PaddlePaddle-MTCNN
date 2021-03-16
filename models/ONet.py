@@ -1,18 +1,20 @@
 import paddle.nn as nn
+import paddle
 
 
 class ONet(nn.Layer):
     def __init__(self):
         super(ONet, self).__init__(name_scope='ONet')
-        self.conv1 = nn.Conv2D(in_channels=3, out_channels=32, kernel_size=3, padding="VALID")
-        self.pool1 = nn.MaxPool2D(kernel_size=3, stride=2)
-        self.conv2 = nn.Conv2D(in_channels=32, out_channels=64, kernel_size=3, padding="VALID")
+        weight_attr = paddle.ParamAttr(regularizer=paddle.regularizer.L2Decay(0.0005))
+        self.conv1 = nn.Conv2D(in_channels=3, out_channels=32, kernel_size=3, padding='valid', weight_attr=weight_attr)
+        self.pool1 = nn.MaxPool2D(kernel_size=3, stride=2, padding='same')
+        self.conv2 = nn.Conv2D(in_channels=32, out_channels=64, kernel_size=3, padding='valid', weight_attr=weight_attr)
         self.pool2 = nn.MaxPool2D(kernel_size=3, stride=2)
-        self.conv3 = nn.Conv2D(in_channels=64, out_channels=64, kernel_size=2, padding="VALID")
-        self.pool3 = nn.MaxPool2D(kernel_size=2, stride=2)
-        self.conv4 = nn.Conv2D(in_channels=64, out_channels=128, kernel_size=2, padding="VALID")
+        self.conv3 = nn.Conv2D(in_channels=64, out_channels=64, kernel_size=2, padding='valid', weight_attr=weight_attr)
+        self.pool3 = nn.MaxPool2D(kernel_size=2, stride=2, padding='same')
+        self.conv4 = nn.Conv2D(in_channels=64, out_channels=128, kernel_size=2, padding='valid', weight_attr=weight_attr)
         self.flatten = nn.Flatten()
-        self.fc = nn.Linear(in_features=1152, out_features=256)
+        self.fc = nn.Linear(in_features=2048, out_features=256)
         self.class_fc = nn.Linear(in_features=256, out_features=2)
         self.softmax = nn.Softmax()
         self.bbox_fc = nn.Linear(in_features=256, out_features=4)
