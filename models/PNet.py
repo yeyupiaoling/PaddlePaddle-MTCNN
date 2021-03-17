@@ -12,6 +12,7 @@ class PNet(nn.Layer):
         self.conv3 = nn.Conv2D(in_channels=16, out_channels=32, kernel_size=3, padding='valid', weight_attr=weight_attr)
         self.conv4_1 = nn.Conv2D(in_channels=32, out_channels=2, kernel_size=1, padding='valid', weight_attr=weight_attr)
         self.conv4_2 = nn.Conv2D(in_channels=32, out_channels=4, kernel_size=1, padding='valid', weight_attr=weight_attr)
+        self.conv4_3 = nn.Conv2D(in_channels=32, out_channels=10, kernel_size=1, padding='valid', weight_attr=weight_attr)
         self.prelu = nn.PReLU()
         self.softmax = nn.Softmax(axis=1)
 
@@ -27,4 +28,7 @@ class PNet(nn.Layer):
         # 人脸box的回归卷积输出层
         bbox_out = self.conv4_2(x)
         bbox_out = paddle.squeeze(bbox_out, axis=[2, 3])
-        return class_out, bbox_out
+        # 5个关键点的回归卷积输出层
+        landmark_out = self.conv4_3(x)
+        landmark_out = paddle.squeeze(landmark_out, axis=[2, 3])
+        return class_out, bbox_out, landmark_out

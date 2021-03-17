@@ -36,7 +36,7 @@ MTCNN，Multi-task convolutional neural network（多任务卷积神经网络）
 训练模型一共分为三步，分别是训练PNet模型、训练RNet模型、训练ONet模型，每一步训练都依赖上一步的结果。
 
 ## 第一步 训练PNet模型
-PNet全称为Proposal Network，其基本的构造是一个全卷积网络，P-Net是一个人脸区域的区域建议网络，该网络的将特征输入结果三个卷积层之后，通过一个人脸分类器判断该区域是否是人脸，同时使用边框回归。与原论文不一样，笔者去掉了关键回归。
+PNet全称为Proposal Network，其基本的构造是一个全卷积网络，P-Net是一个人脸区域的区域建议网络，该网络的将特征输入结果三个卷积层之后，通过一个人脸分类器判断该区域是否是人脸，同时使用边框回归。
 
 ![PNet](https://img-blog.csdnimg.cn/2021031622070120.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMzMjAwOTY3,size_16,color_FFFFFF,t_70)
  - `cd train_PNet` 切换到`train_PNet`文件夹
@@ -44,7 +44,7 @@ PNet全称为Proposal Network，其基本的构造是一个全卷积网络，P-N
  - `python3 train_PNet.py` 开始训练PNet模型
 
 ## 第二步 训练RNet模型
-全称为Refine Network，其基本的构造是一个卷积神经网络，相对于第一层的P-Net来说，增加了一个全连接层，因此对于输入数据的筛选会更加严格。在图片经过P-Net后，会留下许多预测窗口，我们将所有的预测窗口送入R-Net，这个网络会滤除大量效果比较差的候选框，最后对选定的候选框进行Bounding-Box Regression和NMS进一步优化预测结果。与原论文不一样，笔者去掉了关键回归。
+全称为Refine Network，其基本的构造是一个卷积神经网络，相对于第一层的P-Net来说，增加了一个全连接层，因此对于输入数据的筛选会更加严格。在图片经过P-Net后，会留下许多预测窗口，我们将所有的预测窗口送入R-Net，这个网络会滤除大量效果比较差的候选框，最后对选定的候选框进行Bounding-Box Regression和NMS进一步优化预测结果。
 
 ![RNet模型](https://img-blog.csdnimg.cn/20210316221211297.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMzMjAwOTY3,size_16,color_FFFFFF,t_70)
  - `cd train_RNet` 切换到`train_RNet`文件夹
