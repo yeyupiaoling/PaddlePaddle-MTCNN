@@ -14,8 +14,8 @@ from utils.data import CustomDataset
 
 # 设置损失值的比例
 radio_cls_loss = 1.0
-radio_bbox_loss = 0.5
-radio_landmark_loss = 0.5
+radio_bbox_loss = 0.7
+radio_landmark_loss = 0.3
 
 # 训练参数值
 data_path = '../dataset/12/all_data'
