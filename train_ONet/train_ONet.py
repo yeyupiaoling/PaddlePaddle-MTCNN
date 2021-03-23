@@ -13,9 +13,9 @@ from models.ONet import ONet
 from utils.data import CustomDataset
 
 # 设置损失值的比例
-radio_cls_loss = 1.0
+radio_cls_loss = 0.8
 radio_bbox_loss = 0.5
-radio_landmark_loss = 0.5
+radio_landmark_loss = 0.7
 
 # 训练参数值
 data_path = '../dataset/48/all_data'
@@ -51,7 +51,6 @@ for epoch in range(epoch_num):
         cls_loss = class_loss(class_out, label)
         box_loss = bbox_loss(bbox_out, bbox, label)
         landmarks_loss = landmark_loss(landmark_out, landmark, label)
-        print(cls_loss, box_loss, landmarks_loss)
         total_loss = radio_cls_loss * cls_loss + radio_bbox_loss * box_loss + radio_landmark_loss * landmarks_loss
         total_loss.backward()
         optimizer.step()
