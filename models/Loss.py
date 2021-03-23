@@ -37,13 +37,14 @@ class BBoxLoss(nn.Layer):
         ones = paddle.ones_like(label)
         zeros = paddle.zeros_like(label)
         valid_label = paddle.where(paddle.equal(paddle.abs(label), ones), ones, zeros)
+        valid_label = paddle.squeeze(valid_label)
         # 获取有效值的总数
         keep_num = int(paddle.sum(valid_label).numpy()[0] * self.keep_ratio)
         loss = self.square_loss(input=bbox_out, label=bbox_target)
+        loss = paddle.sum(loss, axis=1)
         loss = loss * valid_label
         # 取有效数据计算损失
-        _, index = paddle.topk(paddle.sum(loss, axis=1), k=keep_num, axis=0)
-        loss = paddle.gather(loss, index)
+        loss, _ = paddle.topk(loss, k=keep_num, axis=0)
         return paddle.mean(loss)
 
 
@@ -58,13 +59,14 @@ class LandmarkLoss(nn.Layer):
         ones = paddle.ones_like(label)
         zeros = paddle.zeros_like(label)
         valid_label = paddle.where(paddle.equal(label, paddle.full_like(label, fill_value=-2)), ones, zeros)
+        valid_label = paddle.squeeze(valid_label)
         # 获取有效值的总数
         keep_num = int(paddle.sum(valid_label).numpy()[0] * self.keep_ratio)
         loss = self.square_loss(input=landmark_out, label=landmark_target)
+        loss = paddle.sum(loss, axis=1)
         loss = loss * valid_label
         # 取有效数据计算损失
-        _, index = paddle.topk(paddle.sum(loss, axis=1), k=keep_num, axis=0)
-        loss = paddle.gather(loss, index)
+        loss, _ = paddle.topk(loss, k=keep_num, axis=0)
         return paddle.mean(loss)
 
 

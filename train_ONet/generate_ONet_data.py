@@ -12,6 +12,7 @@ sys.path.append("../")
 from utils.data_format_converter import convert_data
 from utils.utils import py_nms, combine_data_list, crop_landmark_image, delete_old_img, pad, processed_image
 from utils.utils import save_hard_example, generate_bbox, read_annotation, convert_to_square, calibrate_box
+from utils.utils import get_landmark_from_lfw_neg, get_landmark_from_celeba
 
 # 模型路径
 model_path = '../infer_models'
@@ -195,7 +196,7 @@ def crop_48_box_image(data_path, filename, min_face_size, scale_factor, p_thresh
 if __name__ == '__main__':
     data_path = '../dataset/'
     base_dir = '../dataset/WIDER_train/'
-    filename = '../dataset/wider_face_train_bbx_gt.txt'
+    filename = '../dataset/wider_face_train.txt'
     min_face_size = 20
     scale_factor = 0.79
     p_thresh = 0.6
@@ -205,7 +206,13 @@ if __name__ == '__main__':
     crop_48_box_image(data_path, filename, min_face_size, scale_factor, p_thresh, r_thresh)
     # 获取人脸关键点的数据
     print('开始生成landmark图像数据')
-    crop_landmark_image(data_path, 48, argument=True)
+    # 获取lfw negbox，关键点
+    lfw_neg_path = os.path.join(data_path, 'trainImageList.txt')
+    data_list = get_landmark_from_lfw_neg(lfw_neg_path, data_path)
+    # 获取celeba，关键点
+    # celeba_data_list = get_landmark_from_celeba(data_path)
+    # data_list.extend(celeba_data_list)
+    crop_landmark_image(data_path, data_list, 48, argument=True)
     # 合并数据列表
     print('开始合成数据列表')
     combine_data_list(os.path.join(data_path, '48'))

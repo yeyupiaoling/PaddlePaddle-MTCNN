@@ -99,7 +99,7 @@ def IOU(box, boxes):
     return inter / (box_area + area - inter + 1e-10)
 
 
-def getDataFromTxt(txt, data_path, with_landmark=True):
+def get_landmark_from_lfw_neg(txt, data_path, with_landmark=True):
     """获取txt中的图像路径，人脸box，人脸关键点
     参数：
       txt：数据txt文件
@@ -128,6 +128,51 @@ def getDataFromTxt(txt, data_path, with_landmark=True):
         landmark = np.zeros((5, 2))
         for index in range(5):
             rv = (float(components[5 + 2 * index]), float(components[5 + 2 * index + 1]))
+            landmark[index] = rv
+        result.append((img_path, BBox(box), landmark))
+    return result
+
+
+def get_landmark_from_celeba(data_path, with_landmark=True):
+    """获取celeba的脸box，人脸关键点
+    参数：
+      bbox_txt：数据bbox文件
+      landmarks_txt：数据landmarks文件
+      data_path:数据存储目录
+      with_landmark:是否留有关键点
+    返回值：
+      result包含(图像路径，人脸box，关键点)
+    """
+    bbox_txt = os.path.join(data_path, 'list_bbox_celeba.txt')
+    landmarks_txt = os.path.join(data_path, 'list_landmarks_celeba.txt')
+    # 获取图像路径，box，关键点
+    if not os.path.exists(bbox_txt):
+        return []
+    with open(bbox_txt, 'r') as f:
+        bbox_lines = f.readlines()
+    with open(landmarks_txt, 'r') as f:
+        landmarks_lines = f.readlines()
+    result = []
+    for i in range(2, len(bbox_lines)):
+        bbox_line = bbox_lines[i]
+        landmarks_line = landmarks_lines[i]
+        bbox_components = bbox_line.strip().split()
+        landmarks_components = landmarks_line.strip().split()
+        # 获取图像路径
+        img_path = os.path.join(data_path, 'img_celeba', bbox_components[0]).replace('\\', '/')
+        # 人脸box
+        box = (bbox_components[1], bbox_components[2], bbox_components[3], bbox_components[4])
+        box = [float(_) for _ in box]
+        box = list(map(int, box))
+        box = [box[0], box[1], box[2] + box[0], box[3] + box[1]]
+
+        if not with_landmark:
+            result.append((img_path, BBox(box)))
+            continue
+        # 五个关键点(x,y)
+        landmark = np.zeros((5, 2))
+        for index in range(5):
+            rv = (float(landmarks_components[1 + 2 * index]), float(landmarks_components[1 + 2 * index + 1]))
             landmark[index] = rv
         result.append((img_path, BBox(box), landmark))
     return result
@@ -175,7 +220,7 @@ def combine_data_list(data_dir):
     os.remove(os.path.join(data_dir, 'landmark.txt'))
 
 
-def crop_landmark_image(data_dir, size, argument=True):
+def crop_landmark_image(data_dir, data_list, size, argument=True):
     """裁剪并保存带有人脸关键点的图片
     参数：
       data_dir：数据目录
@@ -185,25 +230,20 @@ def crop_landmark_image(data_dir, size, argument=True):
     npr = np.random
     image_id = 0
 
-    # 读取数据列表
-    ftxt = os.path.join(data_dir, 'trainImageList.txt')
-
     # 数据输出路径
-    OUTPUT = os.path.join(data_dir, str(size))
-    if not os.path.exists(OUTPUT):
-        os.makedirs(OUTPUT)
+    output = os.path.join(data_dir, str(size))
+    if not os.path.exists(output):
+        os.makedirs(output)
 
     # 图片处理后输出路径
-    dstdir = os.path.join(OUTPUT, 'landmark')
+    dstdir = os.path.join(output, 'landmark')
     if not os.path.exists(dstdir):
         os.mkdir(dstdir)
 
     # 记录label的txt
-    f = open(os.path.join(OUTPUT, 'landmark.txt'), 'w')
-    # 获取图像路径，box，关键点
-    data = getDataFromTxt(ftxt, data_dir)
+    f = open(os.path.join(output, 'landmark.txt'), 'w')
     idx = 0
-    for (imgPath, box, landmarkGt) in tqdm(data):
+    for (imgPath, box, landmarkGt) in tqdm(data_list):
         # 存储人脸图片和关键点
         F_imgs = []
         F_landmarks = []
@@ -214,8 +254,11 @@ def crop_landmark_image(data_dir, size, argument=True):
         gt_box = np.array([box.left, box.top, box.right, box.bottom])
         # 裁剪人脸图片
         f_face = img[box.top:box.bottom + 1, box.left:box.right + 1]
-        # resize成网络输入大小
-        f_face = cv2.resize(f_face, (size, size))
+        try:
+            # resize成网络输入大小
+            f_face = cv2.resize(f_face, (size, size))
+        except:
+            continue
 
         # 创建一个空的关键点变量
         landmark = np.zeros((5, 2))
@@ -372,31 +415,25 @@ def read_annotation(data_path, label_path):
     data = dict()
     images = []
     bboxes = []
-    labelfile = open(label_path, 'r')
-    while True:
+    with open(label_path, 'r') as f:
+        lines = f.readlines()
+    for line in lines:
+        labels = line.strip().split(' ')
         # 图像地址
-        imagepath = labelfile.readline().strip('\n')
+        imagepath = labels[0]
         # 如果有一行为空，就停止读取
         if not imagepath:
             break
         # 获取图片的路径
-        imagepath = data_path + 'WIDER_train/images/' + imagepath
+        imagepath = data_path + 'WIDER_train/images/' + imagepath + '.jpg'
         images.append(imagepath)
-        # 人脸数目
-        nums = int(labelfile.readline().strip('\n'))
-        if nums == 0: nums = 1
-
         # 根据人脸的数目开始读取所有box
         one_image_bboxes = []
-        for i in range(nums):
-            bb_info = labelfile.readline().strip('\n').split(' ')
-            # 人脸框
-            face_box = [float(bb_info[i]) for i in range(4)]
-
-            xmin = face_box[0]
-            ymin = face_box[1]
-            xmax = xmin + face_box[2]
-            ymax = ymin + face_box[3]
+        for i in range(0, len(labels) - 1, 4):
+            xmin = float(labels[1 + i])
+            ymin = float(labels[2 + i])
+            xmax = float(labels[3 + i])
+            ymax = float(labels[4 + i])
 
             one_image_bboxes.append([xmin, ymin, xmax, ymax])
 
@@ -562,7 +599,7 @@ def save_hard_example(data_path, save_size):
     :return:
     """
     # 获取原数据集中的标注数据
-    filename = os.path.join(data_path, 'wider_face_train_bbx_gt.txt')
+    filename = os.path.join(data_path, 'wider_face_train.txt')
     data = read_annotation(data_path, filename)
 
     # 获取原数据集中的图像路径和标注信息

@@ -146,7 +146,7 @@ def detect_rnet(im, dets, thresh):
     else:
         return None
 
-    keep = py_nms(boxes, 0.6, mode='Union')
+    keep = py_nms(boxes, 0.4, mode='Union')
     boxes = boxes[keep]
     # 对pnet截取的图像的坐标进行校准，生成rnet的人脸框对于原图的绝对坐标
     boxes_c = calibrate_box(boxes, reg[keep])

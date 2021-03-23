@@ -4,6 +4,5 @@ utils/__pycache__/
 dataset/*
 !dataset/wider_face_train.txt
 !dataset/test.jpg
-infer_models/
 result.jpg
 test.py

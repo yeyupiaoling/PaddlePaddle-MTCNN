@@ -9,6 +9,7 @@ sys.path.append("../")
 
 from utils.data_format_converter import convert_data
 from utils.utils import IOU, combine_data_list, crop_landmark_image, delete_old_img
+from utils.utils import get_landmark_from_lfw_neg, get_landmark_from_celeba
 
 
 # 截取pos,neg,part三种类型图片并resize成12x12大小作为PNet的输入
@@ -189,7 +190,13 @@ if __name__ == '__main__':
     crop_12_box_image(data_path)
     # 获取人脸关键点的数据
     print('开始生成landmark图像数据')
-    crop_landmark_image(data_path, 12, argument=True)
+    # 获取lfw negbox，关键点
+    lfw_neg_path = os.path.join(data_path, 'trainImageList.txt')
+    data_list = get_landmark_from_lfw_neg(lfw_neg_path, data_path)
+    # 获取celeba，关键点
+    # celeba_data_list = get_landmark_from_celeba(data_path)
+    # data_list.extend(celeba_data_list)
+    crop_landmark_image(data_path, data_list, 12, argument=True)
     # 合并数据列表
     print('开始合成数据列表')
     combine_data_list(os.path.join(data_path, '12'))
