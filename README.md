@@ -63,7 +63,7 @@ ONet全称为Output Network，基本结构是一个较为复杂的卷积神经�
 # 预测
 
  - `python3 infer_path.py` 使用图像路径，识别图片中人脸box和关键点，并显示识别结果
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210323090407200.jpg)
+![识别结果](https://img-blog.csdnimg.cn/2021040721044636.jpg)
 
 
  - `python3 infer_camera.py` 使用相机捕获图像，识别图片中人脸box和关键点，并显示识别结果
