@@ -3,6 +3,7 @@ models/__pycache__/
 utils/__pycache__/
 dataset/*
 !dataset/wider_face_train.txt
+create_dataset.py
 !dataset/test.jpg
 result.jpg
 test.py

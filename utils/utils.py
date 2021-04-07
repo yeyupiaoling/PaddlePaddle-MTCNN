@@ -194,15 +194,23 @@ def combine_data_list(data_dir):
         landmark = f.readlines()
     with open(os.path.join(data_dir, 'all_data_list.txt'), 'w') as f:
         base_num = len(pos) // 1000 * 1000
-        print('整理前的数据：neg数量：{} pos数量：{} part数量:{} landmark: {} 基数:{}'.format(len(neg), len(pos), len(part), len(landmark), base_num))
+        s1 = '整理前的数据：neg数量：{} pos数量：{} part数量:{} landmark: {} 基数:{}'.format(len(neg), len(pos), len(part),
+                                                                            len(landmark), base_num)
+        print(s1)
         # 打乱写入的数据顺序，并这里这里设置比例，设置size参数的比例就能得到数据集比例, 论文比例为：3:1:1:2
         neg_keep = npr.choice(len(neg), size=base_num * 3, replace=base_num * 3 > len(neg))
         part_keep = npr.choice(len(part), size=base_num, replace=base_num > len(part))
         pos_keep = npr.choice(len(pos), size=base_num, replace=base_num > len(pos))
         landmark_keep = npr.choice(len(landmark), size=base_num * 2, replace=base_num * 2 > len(landmark))
 
-        print('整理后的数据：neg数量：{} pos数量：{} part数量:{} landmark数量：{}'.format(len(neg_keep), len(pos_keep), len(part_keep),
-                                                                        len(landmark_keep)))
+        s2 = '整理后的数据：neg数量：{} pos数量：{} part数量:{} landmark数量：{}'.format(len(neg_keep), len(pos_keep),
+                                                                       len(part_keep), len(landmark_keep))
+        print(s2)
+        with open(os.path.join(data_dir, 'temp.txt'), 'a', encoding='utf-8') as f_temp:
+            f_temp.write('%s\n' % s1)
+            f_temp.write('%s\n' % s2)
+            f_temp.flush()
+            
         # 开始写入列表数据
         for i in pos_keep:
             f.write(pos[i].replace('\\', '/'))
@@ -212,12 +220,6 @@ def combine_data_list(data_dir):
             f.write(part[i].replace('\\', '/'))
         for i in landmark_keep:
             f.write(landmark[i].replace('\\', '/'))
-
-    # 删除原来的数据列表文件
-    os.remove(os.path.join(data_dir, 'positive.txt'))
-    os.remove(os.path.join(data_dir, 'negative.txt'))
-    os.remove(os.path.join(data_dir, 'part.txt'))
-    os.remove(os.path.join(data_dir, 'landmark.txt'))
 
 
 def crop_landmark_image(data_dir, data_list, size, argument=True):
@@ -257,7 +259,9 @@ def crop_landmark_image(data_dir, data_list, size, argument=True):
         try:
             # resize成网络输入大小
             f_face = cv2.resize(f_face, (size, size))
-        except:
+        except Exception as e:
+            print(e)
+            print('resize成网络输入大小，跳过')
             continue
 
         # 创建一个空的关键点变量
@@ -285,8 +289,13 @@ def crop_landmark_image(data_dir, data_list, size, argument=True):
                 # 随机裁剪图像大小
                 box_size = npr.randint(int(min(gt_w, gt_h) * 0.8), np.ceil(1.25 * max(gt_w, gt_h)))
                 # 随机左上坐标偏移量
-                delta_x = npr.randint(-gt_w * 0.2, gt_w * 0.2)
-                delta_y = npr.randint(-gt_h * 0.2, gt_h * 0.2)
+                try:
+                    delta_x = npr.randint(-gt_w * 0.2, gt_w * 0.2)
+                    delta_y = npr.randint(-gt_h * 0.2, gt_h * 0.2)
+                except Exception as e:
+                    print(e)
+                    print('随机裁剪图像大小，跳过')
+                    continue
                 # 计算左上坐标
                 nx1 = int(max(x1 + gt_w / 2 - box_size / 2 + delta_x, 0))
                 ny1 = int(max(y1 + gt_h / 2 - box_size / 2 + delta_y, 0))
@@ -589,6 +598,12 @@ def delete_old_img(old_image_folder, image_size):
     shutil.rmtree(os.path.join(old_image_folder, str(image_size), 'negative'), ignore_errors=True)
     shutil.rmtree(os.path.join(old_image_folder, str(image_size), 'part'), ignore_errors=True)
     shutil.rmtree(os.path.join(old_image_folder, str(image_size), 'landmark'), ignore_errors=True)
+    
+    # 删除原来的数据列表文件
+    os.remove(os.path.join(old_image_folder, str(image_size), 'positive.txt'))
+    os.remove(os.path.join(old_image_folder, str(image_size), 'negative.txt'))
+    os.remove(os.path.join(old_image_folder, str(image_size), 'part.txt'))
+    os.remove(os.path.join(old_image_folder, str(image_size), 'landmark.txt'))
 
 
 def save_hard_example(data_path, save_size):

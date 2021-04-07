@@ -112,6 +112,9 @@ def detect_rnet(im, dets, thresh):
     zeros = np.zeros_like(tmpw)
     num_boxes = np.sum(np.where((np.minimum(tmpw, tmph) >= delete_size), ones, zeros))
     cropped_ims = np.zeros((num_boxes, 3, 24, 24), dtype=np.float32)
+    if int(num_boxes) == 0:
+        print('P模型检测结果为空！')
+        return None, None
     for i in range(int(num_boxes)):
         # 将pnet生成的box相对与原图进行裁剪，超出部分用0补
         if tmph[i] < 20 or tmpw[i] < 20:
