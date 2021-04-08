@@ -13,9 +13,9 @@ from models.ONet import ONet
 from utils.data import CustomDataset
 
 # 设置损失值的比例
-radio_cls_loss = 0.8
+radio_cls_loss = 1.0
 radio_bbox_loss = 0.5
-radio_landmark_loss = 0.7
+radio_landmark_loss = 1.0
 
 # 训练参数值
 data_path = '../dataset/48/all_data'
@@ -34,10 +34,9 @@ model = ONet()
 # 设置优化方法
 scheduler = paddle.optimizer.lr.PiecewiseDecay(boundaries=[6, 14, 20], values=[0.001, 0.0001, 0.00001, 0.000001],
                                                verbose=True)
-optimizer = paddle.optimizer.Momentum(parameters=model.parameters(),
-                                      learning_rate=scheduler,
-                                      momentum=0.9,
-                                      weight_decay=paddle.regularizer.L2Decay(1e-4))
+optimizer = paddle.optimizer.Adam(parameters=model.parameters(),
+                                  learning_rate=scheduler,
+                                  weight_decay=paddle.regularizer.L2Decay(1e-4))
 
 # 获取损失函数
 class_loss = ClassLoss()
