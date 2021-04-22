@@ -22,6 +22,8 @@ model_path = '../infer_models'
 pnet = paddle.jit.load(os.path.join(model_path, 'PNet'))
 pnet.eval()
 
+softmax = paddle.nn.Softmax()
+
 
 # 使用RNet模型预测
 def predict(infer_data):
@@ -31,6 +33,7 @@ def predict(infer_data):
     # 执行预测
     cls_prob, bbox_pred, _ = pnet(infer_data)
     cls_prob = paddle.squeeze(cls_prob)
+    cls_prob = softmax(cls_prob)
     bbox_pred = paddle.squeeze(bbox_pred)
     return cls_prob.numpy(), bbox_pred.numpy()
 

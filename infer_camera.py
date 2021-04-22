@@ -24,6 +24,8 @@ rnet.eval()
 onet = paddle.jit.load(os.path.join(args.model_path, 'ONet'))
 onet.eval()
 
+softmax = paddle.nn.Softmax()
+
 
 # 使用PNet模型预测
 def predict_pnet(infer_data):
@@ -33,6 +35,7 @@ def predict_pnet(infer_data):
     # 执行预测
     cls_prob, bbox_pred, _ = pnet(infer_data)
     cls_prob = paddle.squeeze(cls_prob)
+    cls_prob = softmax(cls_prob)
     bbox_pred = paddle.squeeze(bbox_pred)
     return cls_prob.numpy(), bbox_pred.numpy()
 
@@ -43,6 +46,7 @@ def predict_rnet(infer_data):
     infer_data = paddle.to_tensor(infer_data, dtype='float32')
     # 执行预测
     cls_prob, bbox_pred, _ = rnet(infer_data)
+    cls_prob = softmax(cls_prob)
     return cls_prob.numpy(), bbox_pred.numpy()
 
 
@@ -52,6 +56,7 @@ def predict_onet(infer_data):
     infer_data = paddle.to_tensor(infer_data, dtype='float32')
     # 执行预测
     cls_prob, bbox_pred, landmark_pred = onet(infer_data)
+    cls_prob = softmax(cls_prob)
     return cls_prob.numpy(), bbox_pred.numpy(), landmark_pred.numpy()
 
 

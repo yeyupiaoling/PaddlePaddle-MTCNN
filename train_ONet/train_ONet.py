@@ -24,12 +24,13 @@ learning_rate = 1e-3
 epoch_num = 22
 model_path = '../infer_models'
 
+# 获取P模型
+model = ONet()
+paddle.summary(model, input_size=(batch_size, 3, 48, 48))
+
 # 获取数据
 train_dataset = CustomDataset(data_path)
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-
-# 获取P模型
-model = ONet()
 
 # 设置优化方法
 scheduler = paddle.optimizer.lr.PiecewiseDecay(boundaries=[6, 14, 20], values=[0.001, 0.0001, 0.00001, 0.000001],

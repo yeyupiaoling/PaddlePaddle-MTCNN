@@ -20,7 +20,6 @@ class ONet(nn.Layer):
         self.flatten = nn.Flatten()
         self.fc = nn.Linear(in_features=1152, out_features=256)
         self.class_fc = nn.Linear(in_features=256, out_features=2)
-        self.softmax = nn.Softmax()
         self.bbox_fc = nn.Linear(in_features=256, out_features=4)
         self.landmark_fc = nn.Linear(in_features=256, out_features=10)
 
@@ -36,7 +35,6 @@ class ONet(nn.Layer):
         x = self.fc(x)
         # 分类是否人脸的卷积输出层
         class_out = self.class_fc(x)
-        class_out = self.softmax(class_out)
         # 人脸box的回归卷积输出层
         bbox_out = self.bbox_fc(x)
         # 5个关键点的回归卷积输出层

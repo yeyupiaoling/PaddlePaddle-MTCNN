@@ -16,7 +16,6 @@ class PNet(nn.Layer):
         self.conv4_1 = nn.Conv2D(in_channels=32, out_channels=2, kernel_size=1, padding='valid', weight_attr=weight_attr)
         self.conv4_2 = nn.Conv2D(in_channels=32, out_channels=4, kernel_size=1, padding='valid', weight_attr=weight_attr)
         self.conv4_3 = nn.Conv2D(in_channels=32, out_channels=10, kernel_size=1, padding='valid', weight_attr=weight_attr)
-        self.softmax = nn.Softmax(axis=1)
 
     def forward(self, x):
         x = self.prelu1(self.conv1(x))
@@ -26,7 +25,6 @@ class PNet(nn.Layer):
         # 分类是否人脸的卷积输出层
         class_out = self.conv4_1(x)
         class_out = paddle.squeeze(class_out, axis=[2, 3])
-        class_out = self.softmax(class_out)
         # 人脸box的回归卷积输出层
         bbox_out = self.conv4_2(x)
         bbox_out = paddle.squeeze(bbox_out, axis=[2, 3])
