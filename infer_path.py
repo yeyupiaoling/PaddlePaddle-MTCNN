@@ -237,7 +237,6 @@ def draw_face(image_path, boxes_c, landmarks):
     for i in range(landmarks.shape[0]):
         for j in range(len(landmarks[i]) // 2):
             cv2.circle(img, (int(landmarks[i][2 * j]), int(int(landmarks[i][2 * j + 1]))), 2, (0, 0, 255))
-    cv2.imwrite("result.jpg", img)
     cv2.imshow('result', img)
     cv2.waitKey(0)
 
